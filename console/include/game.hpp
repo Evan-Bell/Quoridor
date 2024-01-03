@@ -16,18 +16,15 @@
 // #include <utility>
 // #include <algorithm>
 
-#include "color.hpp" // Include the Color header
-#include "constants.hpp" // Include the constants.h header file
+
 #include "game_state.hpp"
 #include "randomBot.hpp"
+#include "color.hpp"
 
 using std::vector;
 using std::string;
 
 
-const string DEFAULT_WALL_COLOR = Color::PINK;
-const string PLAYER1COLOR = Color::LIGHT_BLUE;
-const string PLAYER2COLOR = Color::LIGHT_RED;
 
 class Game {
 public:

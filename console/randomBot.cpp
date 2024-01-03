@@ -8,6 +8,7 @@ std::vector<int> randombot_action(GameState& game_state) {
     double move_prob = 0.3;
 
     std::vector<std::vector<int> > wall_placements = game_state.get_available_wall_placements(false);
+
     std::vector<std::vector<int> > available_moves = game_state.get_available_moves(false);
 
     if (wall_placements.empty()) {

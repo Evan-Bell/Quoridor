@@ -11,6 +11,8 @@
 #include <thread>
 #include <utility>
 #include <algorithm>
+
+
 #include "include/game_state.hpp"
 
 using std::cout;
@@ -24,14 +26,14 @@ using std::max;
 
 
 
-GameState::GameState(int size, int walls_per_player) 
+GameState::GameState() 
         : player1(true), 
-        size(size), 
-        num_walls(walls_per_player), 
-        walls_dim(size-1), 
-        walls_per_player(std::make_pair(walls_per_player, walls_per_player)), 
-        player1_pos(std::make_pair(size-1, size/2)), 
-        player2_pos(std::make_pair(0,size/2)), 
+        size(SIZE), 
+        num_walls(WALLS), 
+        walls_dim(SIZE-1), 
+        walls_per_player(std::make_pair(WALLS, WALLS)), 
+        player1_pos(std::make_pair(SIZE-1, SIZE/2)), 
+        player2_pos(std::make_pair(0,SIZE/2)), 
         check_wall_blocks_exit_on_gen(true) {
         
         reinitialize();
@@ -40,6 +42,11 @@ GameState::GameState(int size, int walls_per_player)
 void GameState::reinitialize() {
     
     player1 = true;
+    player1_pos = std::make_pair(size-1, size/2); 
+    player2_pos = std::make_pair(0,size/2); 
+    ver_walls.clear();
+    hor_walls.clear();
+    player_walls.clear();
     ver_walls.resize(walls_dim, 0);
     hor_walls.resize(walls_dim, 0);
     player_walls.resize(walls_dim, 0);
@@ -60,21 +67,21 @@ void GameState::copy(GameState& game_state) {
 }
 
 bool GameState::is_hor_wall(const int x, const int y){
-    if (((hor_walls[x] << y) & 1) == 1){
+    if (((hor_walls[x] >> y) & 1) == 1){
         return true;
     }
     return false;
 }
 
 bool GameState::is_ver_wall(const int x, const int y){
-    if (((ver_walls[x] << y) & 1) == 1){
+    if (((ver_walls[x] >> y) & 1) == 1){
         return true;
     }
     return false;
 }
 
-bool GameState::get_which_player_wall(const int x, const int y){
-    if (((player_walls[x] << y) & 1) == 1){
+bool GameState::is_wall_player1(const int x, const int y){
+    if (((player_walls[x] >> y) & 1) == 0){
         return true;
     }
     return false;
@@ -89,7 +96,7 @@ void GameState::set_wall(const int x, const int y, const bool isHorizontal){
     }
 }
 
-void GameState::set_which_player_wall(const int x, const int y, const bool is_player1){
+void GameState::set_which_player_placed_wall(const int x, const int y, const bool is_player1){
     if (is_player1){
         player_walls[x] &= ~(1 << y);
     }
@@ -100,10 +107,10 @@ void GameState::set_which_player_wall(const int x, const int y, const bool is_pl
 
 void GameState::clear_wall(const int x, const int y, const bool isHorizontal){
     if (isHorizontal){
-        hor_walls[x] &= ~(1 << y);
+        hor_walls[x] = hor_walls[x] & ~(1 << y);
     }
     else{
-        ver_walls[x] &= ~(1 << y);
+        ver_walls[x] = ver_walls[x] & ~(1 << y);
     }
 }
 
@@ -210,7 +217,7 @@ vector<vector<int>> GameState::get_available_moves(bool computeNewWallPlacements
     return availableMoves;
 }
 
-bool GameState::is_wall_placement_valid(pair<int,int>& pos, bool is_horizontal) {
+bool GameState::is_wall_placement_valid(const pair<int,int>& pos, const bool isHorizontal) {
     int x = pos.first;
     int y = pos.second;
 
@@ -221,7 +228,7 @@ bool GameState::is_wall_placement_valid(pair<int,int>& pos, bool is_horizontal) 
     if (is_hor_wall(x,y) || is_ver_wall(x,y)){
         return false;
     }
-    else if (is_horizontal){
+    else if (isHorizontal){
         if (y > 0 && is_hor_wall(x, y-1) || (y < walls_dim - 1 && is_hor_wall(x, y+1))) {
             return false;
         }
@@ -233,7 +240,7 @@ bool GameState::is_wall_placement_valid(pair<int,int>& pos, bool is_horizontal) 
     }
 
     if (check_wall_blocks_exit_on_gen) {
-        if (is_wall_blocking_exit(pos, is_horizontal)) {
+        if (is_wall_blocking_exit(pos, isHorizontal)) {
             return false;
         }
     }
@@ -245,8 +252,9 @@ bool GameState::is_wall_blocking_exit(const pair<int, int> pos, const int isHori
     
     set_wall(pos.first, pos.second, isHorizontal);
 
-    // bool exit_blocked = !dfs_check_if_exit_paths_exist(*this);
-    bool exit_blocked = false;
+    std::pair<double, double> path_dists = aStarSearch(*this);
+    bool exit_blocked = (path_dists.first != std::numeric_limits<double>::infinity() && path_dists.second != std::numeric_limits<double>::infinity());
+    // bool exit_blocked = false;
     
     clear_wall(pos.first, pos.second, isHorizontal);
     
@@ -296,8 +304,8 @@ vector<vector<int>> GameState::get_available_wall_placements(bool compute_new_wa
 }
 
 void GameState::update_available_wall_placements() {
-    vector< vector<int> > new_wall_placements;
-    for (vector<int> &item : saved_wall_placements) {
+    vector<vector<int>> new_wall_placements;
+    for (vector<int> item : saved_wall_placements) {
         pair<int, int> pos = std::make_pair(item[0], item[1]);
         bool orientation = item[2];
         if (is_wall_placement_valid(pos, orientation)) {
@@ -316,7 +324,7 @@ int GameState::get_winner(){
     return (player1_pos.first == 0) ? 0 : 1;
 }
 
-void GameState::place_wall(vector<int> inp, bool check_if_valid, bool compute_new_wall_placements) {
+void GameState::place_wall(const vector<int> inp, bool check_if_valid, bool compute_new_wall_placements) {
     int x = inp[0];
     int y = inp[1];
     pair<int, int> pos = std::make_pair(x,y);
@@ -336,7 +344,7 @@ void GameState::place_wall(vector<int> inp, bool check_if_valid, bool compute_ne
     }
 
     set_wall(x, y, isHorizontal);
-    set_which_player_wall(x, y, isHorizontal);
+    set_which_player_placed_wall(x, y, player1);
 
     // Update wall placements
     if (compute_new_wall_placements) {
@@ -346,7 +354,7 @@ void GameState::place_wall(vector<int> inp, bool check_if_valid, bool compute_ne
     }
 }
 
-void GameState::move_piece(vector<int> new_move, bool compute_new_wall_placements) {
+void GameState::move_piece(const vector<int> new_move, bool compute_new_wall_placements) {
     pair<int, int> pos, otherpos;
 
     if (player1) {

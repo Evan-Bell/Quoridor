@@ -8,21 +8,24 @@
 #include <unordered_set>
 #include <cstdlib>
 #include <chrono>
-#include <thread>
 #include <utility>
 #include <algorithm>
 
 #include "include/game.hpp"
+
+
+const std::string DEFAULT_WALL_COLOR = Color::PINK;
+const std::string PLAYER1COLOR = Color::LIGHT_BLUE;
+const std::string PLAYER2COLOR = Color::LIGHT_RED;
 
 using std::cout;
 using std::endl;
 using std::min;
 using std::max;
 
-// const string DEFAULT_WALL_COLOR = Color::PINK;
-// const string PLAYER1COLOR = Color::LIGHT_BLUE;
-// const string PLAYER2COLOR = Color::LIGHT_RED;
-
+void p(int i){
+    cout << i << endl;
+}
 
 Game::Game(bool user_sim, bool verbose, int rounds, int sim_delay)
         : is_user_sim(user_sim), 
@@ -30,7 +33,7 @@ Game::Game(bool user_sim, bool verbose, int rounds, int sim_delay)
         rounds(rounds), 
         sim_delay(sim_delay)
         {
-        // Initialize the game.
+            game_state = GameState();
     }
 
 void Game::print_commands() {
@@ -81,7 +84,7 @@ bool Game::player_simulation() {
     int index = 1 * (!game_state.player1);
     int player_number = index + 1;
 
-    cout << "Player " << player_number << " (" << player_simulation_algorithms[index] << ") is thinking...";
+    cout << "Player " << player_number << " (" << player_simulation_algorithms[index] << ") is thinking...   ";
 
     vector<int> action;
 
@@ -96,6 +99,7 @@ bool Game::player_simulation() {
     if (player_simulation_algorithms[index] == "randomBot") {
         action = randombot_agent();
     }
+    
     // else if (player_simulation_algorithms[index] == "impatientBot") {
     //     action = impatientbot_agent(cop);
     // }
@@ -113,24 +117,26 @@ bool Game::player_simulation() {
     if (!action.empty()) {
         std::clock_t t2 = std::clock();
         execute_action(action);
-        if (game_state.player1){
-            execution_times[-1].first.push_back(static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
-            hist_per_round[-1].first.push_back(action);
-        }
-        else{
-            execution_times[-1].second.push_back(static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
-            hist_per_round[-1].second.push_back(action);
-        }
+        // if (game_state.player1){
+        //     execution_times[-1].first.push_back(static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
+        //     hist_per_round[-1].first.push_back(action);
+        //     hist_per_round.emplace_back(vector<vector<int>>{}, vector<vector<int>>{});
+        //     execution_times.emplace_back(vector<int>{}, vector<int>{});
+        // }
+        // else{
+        //     execution_times[-1].second.push_back(static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
+        //     hist_per_round[-1].second.push_back(action);
+        // }
 
         if (action.size() == 2) {
-            cout << "Player " << player_number << " (" << player_simulation_algorithms[index] << ") has moved his piece to " << action[0] << ", " << action[1] << "." << std::endl;
+            cout << "\r Player " << player_number << " (" << player_simulation_algorithms[index] << ") has moved his piece to " << action[0] << ", " << action[1] << "." << std::endl;
         }
         else {
             string orientation = (action[2]) ? "HORIZONTAL" : "VERTICAL";
             string loc = "(" + string(1, static_cast<char>('a' + action[0])) + ", " + string(1, static_cast<char>('a' + action[1])) + ")";
-            cout << "Player " << player_number << " (" << player_simulation_algorithms[index] << ") has placed a " << orientation << " wall at " << loc << "." << std::endl;
+            cout << "\r Player " << player_number << " (" << player_simulation_algorithms[index] << ") has placed a " << orientation << " wall at " << loc << "." << std::endl;
         }
-        cout << "     This took " << static_cast<double>(t2 - t1) / CLOCKS_PER_SEC << " seconds." << std::flush;
+        cout << "This took " << static_cast<double>(t2 - t1) / CLOCKS_PER_SEC << " seconds." << std::flush;
         return true;
     }
     else {
@@ -142,8 +148,9 @@ bool Game::player_simulation() {
 void Game::play() {
     while (rounds > 0) {
         double start_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-        game_state.get_available_wall_placements();
+        // game_state.get_available_wall_placements();
         cout << endl;
+        cout << "\n";
         print_game_stats();
         cout << "\n";
         print_board();
@@ -179,12 +186,12 @@ void Game::play() {
                 print_colored_output("The winner is " + winner + ".", Color::CYAN);
                 if (rounds >= 1) {
                     cout << "restarting in 3:" << std::flush;
-                    //sleep(3);
+                    std::this_thread::sleep_for(std::chrono::seconds(3));;
                 }
             }
             continue;
         }
-
+        
         if (game_state.player1) {
             if (is_user_sim) {
                 player1_user();
@@ -310,7 +317,7 @@ void Game::print_board() {
 }
 
 string Game::getWallColor(GameState& g, int i, int j) {
-    return (g.get_which_player_wall(i, j)) ? PLAYER1COLOR : PLAYER2COLOR;
+    return (g.is_wall_player1(i, j)) ? PLAYER1COLOR : PLAYER2COLOR;
 }
 
 void Game::print_colored_output(const string& text, const string& color, bool wipe, const string& _end) {
@@ -324,6 +331,8 @@ void Game::print_colored_output(const string& text, const string& color, bool wi
 
 int main() {
     // Your program code here
-    cout << "working" << endl;
+    Game g = Game(false, true, 2, 0);
+    g.print_commands();
+    g.play();
     return 0;
 }

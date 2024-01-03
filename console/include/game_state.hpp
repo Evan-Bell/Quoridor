@@ -12,9 +12,11 @@
 // #include <unordered_set>
 // #include <cstdlib>
 // #include <chrono>
-// #include <thread>
 // #include <utility>
 // #include <algorithm>
+
+#include "constants.hpp"
+#include "astar.hpp"
 
 using std::vector;
 using std::pair;
@@ -34,7 +36,7 @@ public:
     vector<int> player_walls; // which player placed a wall (only entries which are 1 in ver_walls or hor_walls actually treated as 'holding anything')
     vector< vector<int> > saved_wall_placements;
 
-    GameState(int size = 9, int walls_per_player = 10);
+    GameState();
 
     void reinitialize();
 
@@ -44,11 +46,11 @@ public:
 
     bool is_ver_wall(const int x, const int y);
 
-    bool get_which_player_wall(const int x, const int y);
+    bool is_wall_player1(const int x, const int y);
 
     void set_wall(const int x, const int y, const bool isHorizontal);
 
-    void set_which_player_wall(const int x, const int y, const bool is_player1);
+    void set_which_player_placed_wall(const int x, const int y, const bool is_player1);
 
     void clear_wall(const int x, const int y, const bool isHorizontal);
 
@@ -58,7 +60,7 @@ public:
 
     vector<vector<int>> get_available_moves(bool computeNewWallPlacements = true);
 
-    bool is_wall_placement_valid(pair<int,int>& pos, bool is_horizontal);
+    bool is_wall_placement_valid(const pair<int,int>& pos, const bool isHorizontal);
 
     bool is_wall_blocking_exit(const pair<int, int> pos, const int isHorizontal);
 
