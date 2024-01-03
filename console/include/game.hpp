@@ -23,6 +23,7 @@
 
 using std::vector;
 using std::string;
+using std::pair;
 
 
 
@@ -32,19 +33,19 @@ public:
     string MoveKeyValues;
     string WallKeyValues;
 
-    int sim_delay;
+    double sim_delay;
     int rounds;
     bool verbose;
     bool is_user_sim;
 
     GameState game_state;
-    vector<string> player_simulation_algorithms = {"randomBot", "randomBot"};
-    vector<string> algorithms = {"randomBot", "impatientBot", "minimax-alpha-beta-pruning", "path-search", "online-bot"};
-    vector< pair< vector<int>, vector<int> > > execution_times;
+    vector<string> player_simulation_algorithms = {"path-search", "minimax"};
+    vector<string> algorithms = {"randomBot", "impatientBot", "minimax", "path-search", "online-bot"};
     vector<int> wins = {0, 0};
-    vector< pair< vector<vector<int>>, vector<vector<int>> > >  hist_per_round;
+    vector<pair<vector<double>, vector<double>>> execution_times;
+    vector< pair< vector< vector<int> >, vector< vector<int> > > > hist_per_round;
 
-    Game(bool user_sim, bool verbose, int rounds, int sim_delay = 500);
+    Game(bool user_sim, bool verbose, int rounds, double sim_delay = 0.5);
 
     void print_commands();
 
@@ -55,6 +56,10 @@ public:
     void player1_user();
 
     vector<int> randombot_agent();
+
+    vector<int> minimax_agent(const int depth = 1);
+
+    vector<int> pathsearch_agent();
 
     void execute_action( vector<int> action);
 
@@ -68,7 +73,7 @@ public:
 
     static string getWallColor(GameState& g, int i, int j);
 
-    static void print_colored_output(const string& text, const string& color, bool wipe = false, const string& _end = "\n");
+    static void print_colored_output(const string& text, const string& color);
     // Add other member functions and variables here.
 };
 

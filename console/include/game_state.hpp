@@ -16,7 +16,7 @@
 // #include <algorithm>
 
 #include "constants.hpp"
-#include "astar.hpp"
+// #include "astar.hpp"
 
 using std::vector;
 using std::pair;
@@ -58,13 +58,13 @@ public:
 
     bool is_valid_move(pair<int,int>& pos, pair<int,int>& new_pos);
 
-    vector<vector<int>> get_available_moves(bool computeNewWallPlacements = true);
+    vector<vector<int>> get_available_moves();
 
     bool is_wall_placement_valid(const pair<int,int>& pos, const bool isHorizontal);
 
     bool is_wall_blocking_exit(const pair<int, int> pos, const int isHorizontal);
 
-    vector<vector<int>> get_available_wall_placements(bool compute_new_wall_placements = true);
+    vector<vector<int>> get_available_wall_placements();
 
     void update_available_wall_placements();
 
@@ -74,7 +74,9 @@ public:
 
     void place_wall(vector<int> inp, bool check_if_valid = true, bool compute_new_wall_placements = true);
 
-    void move_piece(vector<int> new_move, bool compute_new_wall_placements = true);
+    void move_piece(vector<int> new_move);
+
+    pair<int, int> get_cur_player_pos();
 };
 
 #endif // GAMESTATE_H

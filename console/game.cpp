@@ -10,8 +10,11 @@
 #include <chrono>
 #include <utility>
 #include <algorithm>
+#include <random>
 
 #include "include/game.hpp"
+#include "include/astar.hpp"
+#include "include/minimax.hpp"
 
 
 const std::string DEFAULT_WALL_COLOR = Color::PINK;
@@ -27,13 +30,15 @@ void p(int i){
     cout << i << endl;
 }
 
-Game::Game(bool user_sim, bool verbose, int rounds, int sim_delay)
+Game::Game(bool user_sim, bool verbose, int rounds, double sim_delay)
         : is_user_sim(user_sim), 
         verbose(verbose),
         rounds(rounds), 
         sim_delay(sim_delay)
         {
             game_state = GameState();
+            execution_times.emplace_back(vector<double>{}, vector<double>{});
+            hist_per_round.emplace_back(vector<vector<int>>{}, vector<vector<int>>{});
     }
 
 void Game::print_commands() {
@@ -70,6 +75,112 @@ void Game::player1_user(){
 vector<int> Game::randombot_agent(){
     return randombot_action(game_state);
 }
+vector<int> Game::minimax_agent(const int depth){
+    double alpha = -std::numeric_limits<double>::infinity();
+    double beta = std::numeric_limits<double>::infinity();
+    double max_val = -std::numeric_limits<double>::infinity();
+    vector<int> max_move;
+    
+    int swap = (game_state.player1)? 1 : -1;
+
+    game_state.check_wall_blocks_exit_on_gen = false;
+    
+    vector<vector<int> > available_moves = game_state.get_available_moves();
+    for (vector<int>& move : available_moves){
+        
+        pair<int, int> temp = game_state.get_cur_player_pos();
+        vector<int> curpos = {temp.first, temp.second};
+        game_state.move_piece(move);
+        game_state.player1 = !game_state.player1;
+
+        double reward = swap*minimax_search(game_state, depth-1, alpha, beta, true);
+
+        game_state.player1 = !game_state.player1;
+        game_state.move_piece(curpos);
+
+        if (reward > max_val){
+            max_val = reward;
+            max_move = move;
+        }
+    }
+    
+    vector<vector<int>> wall_placements = game_state.get_available_wall_placements();
+
+    for (vector<int>& wall : wall_placements){
+        int x = wall[0];
+        int y = wall[1];
+        bool isHorizontal = wall[2];
+
+        game_state.set_wall(x, y, isHorizontal);
+        game_state.player1 = !game_state.player1;
+
+        double reward = swap*minimax_search(game_state, depth-1, alpha, beta, true);
+
+        game_state.player1 = !game_state.player1;
+        game_state.clear_wall(x, y, isHorizontal);
+
+        if (reward > max_val){
+            max_val = swap*reward;
+            max_move = wall;
+        }
+    }
+
+    game_state.check_wall_blocks_exit_on_gen = true;
+
+
+    return max_move;
+}
+
+vector<int> Game::pathsearch_agent(){
+    double max_val = -std::numeric_limits<double>::infinity();
+    vector<int> max_move;
+    
+    int swap = (game_state.player1)? 1 : -1;
+    
+    vector<vector<int> > available_moves = game_state.get_available_moves();
+    for (vector<int>& move : available_moves){
+
+        pair<int, int> temp = game_state.get_cur_player_pos();
+        vector<int> curpos = {temp.first, temp.second};
+        game_state.move_piece(move);
+        game_state.player1 = !game_state.player1;
+
+        pair<double, double> dists = aStarSearch(game_state);
+
+        game_state.player1 = !game_state.player1;
+        game_state.move_piece(curpos);
+        
+        double reward = swap*((game_state.player1)? 4*dists.second - 3*dists.first : dists.second - dists.first);
+
+        if (reward > max_val){
+            max_val = reward;
+            max_move = move;
+        }
+    }
+    
+    vector<vector<int>> wall_placements = game_state.get_available_wall_placements();
+    for (vector<int>& wall : wall_placements){
+        int x = wall[0];
+        int y = wall[1];
+        bool isHorizontal = wall[2];
+
+        game_state.set_wall(x, y, isHorizontal);
+        pair<double, double> dists = aStarSearch(game_state);
+        game_state.clear_wall(x, y, isHorizontal);
+
+        double reward = swap*((game_state.player1)? 4*dists.second - 3*dists.first : dists.second - dists.first);
+
+        if (reward > max_val){
+            max_val = swap*reward;
+            max_move = wall;
+        }
+    }
+    return max_move;
+}
+
+void choose_random_from_actions(vector<vector<int>>& actdions){
+    return;
+}
 
 void Game::execute_action( vector<int> action){
     if (action.size() == 2){
@@ -93,16 +204,15 @@ bool Game::player_simulation() {
     // if (player_simulation_algorithms[index] == "minimax-alpha-beta-pruning") {
     //     action = minimax_agent(cop, game_state.player1);
     // }
-    // else if (player_simulation_algorithms[index] == "path-search") {
-    //     action = pathsearch_agent(cop, game_state.player1);
-    // }
-    if (player_simulation_algorithms[index] == "randomBot") {
+    if (player_simulation_algorithms[index] == "path-search") {
+        action = pathsearch_agent();
+    }
+    else if (player_simulation_algorithms[index] == "randomBot") {
         action = randombot_agent();
     }
-    
-    // else if (player_simulation_algorithms[index] == "impatientBot") {
-    //     action = impatientbot_agent(cop);
-    // }
+    else if (player_simulation_algorithms[index] == "minimax") {
+        action = minimax_agent(2);
+    }
     // else if (player_simulation_algorithms[index] == "online-bot") {
     //     while (online_move == std::make_pair(0, 0)) {
     //         // Wait for online move
@@ -115,18 +225,16 @@ bool Game::player_simulation() {
     }
 
     if (!action.empty()) {
-        std::clock_t t2 = std::clock();
         execute_action(action);
-        // if (game_state.player1){
-        //     execution_times[-1].first.push_back(static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
-        //     hist_per_round[-1].first.push_back(action);
-        //     hist_per_round.emplace_back(vector<vector<int>>{}, vector<vector<int>>{});
-        //     execution_times.emplace_back(vector<int>{}, vector<int>{});
-        // }
-        // else{
-        //     execution_times[-1].second.push_back(static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
-        //     hist_per_round[-1].second.push_back(action);
-        // }
+        std::clock_t t2 = std::clock();
+        if (game_state.player1){
+            execution_times.back().first.push_back(static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
+            hist_per_round.back().first.push_back(action);
+        }
+        else{
+            execution_times.back().second.push_back(static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
+            hist_per_round.back().second.push_back(action);
+        }
 
         if (action.size() == 2) {
             cout << "\r Player " << player_number << " (" << player_simulation_algorithms[index] << ") has moved his piece to " << action[0] << ", " << action[1] << "." << std::endl;
@@ -147,8 +255,8 @@ bool Game::player_simulation() {
 
 void Game::play() {
     while (rounds > 0) {
-        double start_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-        // game_state.get_available_wall_placements();
+        std::clock_t start_time = std::clock();
+        //game_state.get_available_wall_placements();
         cout << endl;
         cout << "\n";
         print_game_stats();
@@ -157,20 +265,23 @@ void Game::play() {
         cout << endl;
 
         if (game_state.is_goal_state()) {
-            
-            hist_per_round.emplace_back(vector<vector<int>>{}, vector<vector<int>>{});
-            execution_times.emplace_back(vector<int>{}, vector<int>{});
-
-            vector<int> exec1 = execution_times[-1].first;
-            vector<int> exec2 = execution_times[-1].second;
-
-            double avgtime1 = static_cast<double>(accumulate(exec1.begin(), exec1.end(), 0)) / exec1.size();
-            double avgtime2 = static_cast<double>(accumulate(exec2.begin(), exec2.end(), 0)) / exec2.size();
-
-            cout << "Execution averages this round: " << avgtime1 << " " << avgtime2 << endl;
-            cout << "Number of moves this round: " << hist_per_round[-1].first.size() << " " << hist_per_round[-1].second.size() << endl;
-            
             int winner_ind = game_state.get_winner();
+
+            vector<double> exec1 = execution_times.back().first;
+            vector<double> exec2 = execution_times.back().second;
+
+            double avgtime1 = static_cast<double>(accumulate(exec1.begin(), exec1.end(), 0.0)) / exec1.size();
+            double avgtime2 = static_cast<double>(accumulate(exec2.begin(), exec2.end(), 0.0)) / exec2.size();
+
+            int moves1 = hist_per_round.back().first.size();
+            int moves2 = moves1 + ((winner_ind == 0)? -1 : 0);
+
+            hist_per_round.emplace_back(vector<vector<int>>{}, vector<vector<int>>{});
+            execution_times.emplace_back(vector<double>{}, vector<double>{});
+            
+            cout << "Execution averages this round: " <<  avgtime1 << ", " << avgtime2 << endl;
+            cout << "Number of moves this round: " <<  moves1 << ", " << moves2 << endl;
+            
             wins[winner_ind]++;
             rounds--;
             game_state.reinitialize();
@@ -184,9 +295,12 @@ void Game::play() {
             } else {
                 string winner = (winner_ind == 0) ? "P1" : "P2";
                 print_colored_output("The winner is " + winner + ".", Color::CYAN);
-                if (rounds >= 1) {
+                if (rounds != 0) {
                     cout << "restarting in 3:" << std::flush;
-                    std::this_thread::sleep_for(std::chrono::seconds(3));;
+                    std::this_thread::sleep_for(std::chrono::seconds(3));
+                }
+                else{
+                    cout << "Scores: " << wins[0] << ", " << wins[1] << endl << std::flush;
                 }
             }
             continue;
@@ -201,7 +315,7 @@ void Game::play() {
                     cout << "Bot has returned something unholy" << endl;
                     exit(1);
                 }
-                while (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - start_time < sim_delay) {
+                while (static_cast<double>(std::clock() - start_time) / CLOCKS_PER_SEC < sim_delay) {
                     continue;
                 }
             }
@@ -211,7 +325,7 @@ void Game::play() {
                 cout << "Bot has returned something unholy" << endl;
                 exit(2);
             }
-            while (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - start_time < sim_delay) {
+            while (static_cast<double>(std::clock() - start_time) / CLOCKS_PER_SEC < sim_delay) {
                 continue;
             }
         }
@@ -320,18 +434,14 @@ string Game::getWallColor(GameState& g, int i, int j) {
     return (g.is_wall_player1(i, j)) ? PLAYER1COLOR : PLAYER2COLOR;
 }
 
-void Game::print_colored_output(const string& text, const string& color, bool wipe, const string& _end) {
-    if (wipe) {
-        cout << '\r' << color << text << Color::RESET << _end << std::flush;
-    } else {
-        cout << color << text << Color::RESET << _end << std::flush;
-    }
+void Game::print_colored_output(const string& text, const string& color) {
+    cout << '\r' << color << text << Color::RESET << endl << std::flush;
 }
 
 
 int main() {
     // Your program code here
-    Game g = Game(false, true, 2, 0);
+    Game g = Game(false, true, 9, 0.00);
     g.print_commands();
     g.play();
     return 0;

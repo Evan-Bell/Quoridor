@@ -3,10 +3,28 @@
 #include <climits>
 #include <functional>
 #include <limits>
+#include <iostream>
+#include <iomanip> // Include the header for std::setw
+#include <vector>
+#include <numeric> // For accumulate
+#include <thread>
+#include <string>
+#include <ctime>
+#include <unordered_set>
+#include <cstdlib>
+#include <chrono>
+#include <thread>
+#include <utility>
+#include <algorithm>
 
 #include "include/astar.hpp"
 
-double z_asearch(GameState& game_state, const std::pair<int, int> start_pos, const int end_row) {
+double z_asearch(GameState& game_state, const std::pair<int, int> start_pos, const int end_row, const std::pair<int, int> other_player, const bool skip_parity) {
+    
+    if (start_pos.first == end_row) {
+        return -1;
+    }
+    
     int size = game_state.size;
     const int directions[][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}}; // Up, Down, Left, Right
 
@@ -14,7 +32,7 @@ double z_asearch(GameState& game_state, const std::pair<int, int> start_pos, con
 
     std::priority_queue<Node, std::vector<Node>, std::greater<Node>> p_queue;
 
-    p_queue.emplace(start_pos.first, start_pos.second, 0, 0);
+    p_queue.emplace(start_pos.first, start_pos.second, 0);
 
     std::vector<std::vector<int>> gScore(size, std::vector<int>(size, INT_MAX));
 
@@ -41,10 +59,15 @@ double z_asearch(GameState& game_state, const std::pair<int, int> start_pos, con
                 std::pair<int, int> t_pos = std::make_pair(newX, newY);
                 if (game_state.is_valid_move(cur_pos, t_pos)) { // Pass the coordinates to is_valid_move
                     int tentativeGScore = gScore[x][y] + 1;
+
+                    if (other_player == t_pos && t_pos.first != end_row && tentativeGScore%2 == skip_parity){
+                        tentativeGScore = gScore[x][y];
+                    }
+                    
                     if (tentativeGScore < gScore[newX][newY]) {
                         gScore[newX][newY] = tentativeGScore;
                         int fScore = tentativeGScore + abs(newX - end_row); // L1 norm
-                        p_queue.emplace(newX, newY, tentativeGScore, fScore);
+                        p_queue.emplace(newX, newY, fScore);
                     }
                 }
             }
@@ -56,7 +79,8 @@ double z_asearch(GameState& game_state, const std::pair<int, int> start_pos, con
 
 
 std::pair<double, double> aStarSearch(GameState& g) {
-    double p1 = z_asearch(g, g.player1_pos, 0);
-    double p2 = z_asearch(g, g.player2_pos, g.size-1);
-    return std::make_pair(0,0);
+    double p1 = z_asearch(g, g.player1_pos, 0, g.player2_pos, !g.player1);
+    double p2 = z_asearch(g, g.player2_pos, g.size-1, g.player1_pos, g.player1);
+    // std::cout << p1 << " " << p2 << std::endl;
+    return std::make_pair(p1,p2);
 }

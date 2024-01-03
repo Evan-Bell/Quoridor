@@ -14,6 +14,8 @@
 
 
 #include "include/game_state.hpp"
+#include "astar.cpp"
+#include "minimax.cpp"
 
 using std::cout;
 using std::endl;
@@ -43,7 +45,7 @@ void GameState::reinitialize() {
     
     player1 = true;
     player1_pos = std::make_pair(size-1, size/2); 
-    player2_pos = std::make_pair(0,size/2); 
+    player2_pos = std::make_pair(0, size/2);
     ver_walls.clear();
     hor_walls.clear();
     player_walls.clear();
@@ -52,6 +54,7 @@ void GameState::reinitialize() {
     player_walls.resize(walls_dim, 0);
     walls_per_player = std::make_pair(num_walls, num_walls);
     saved_wall_placements.clear();
+    get_available_wall_placements();
 }
 
 void GameState::copy(GameState& game_state) {
@@ -148,7 +151,7 @@ bool GameState::is_valid_move(pair<int,int>& pos, pair<int,int>& new_pos) {
         return true;
     }
 
-vector<vector<int>> GameState::get_available_moves(bool computeNewWallPlacements) {
+vector<vector<int>> GameState::get_available_moves() {
     vector< vector<int> > availableMoves;
 
     vector< pair<int, int> > dirs = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
@@ -253,7 +256,7 @@ bool GameState::is_wall_blocking_exit(const pair<int, int> pos, const int isHori
     set_wall(pos.first, pos.second, isHorizontal);
 
     std::pair<double, double> path_dists = aStarSearch(*this);
-    bool exit_blocked = (path_dists.first != std::numeric_limits<double>::infinity() && path_dists.second != std::numeric_limits<double>::infinity());
+    bool exit_blocked = (path_dists.first == std::numeric_limits<double>::infinity() or path_dists.second == std::numeric_limits<double>::infinity());
     // bool exit_blocked = false;
     
     clear_wall(pos.first, pos.second, isHorizontal);
@@ -261,7 +264,7 @@ bool GameState::is_wall_blocking_exit(const pair<int, int> pos, const int isHori
     return exit_blocked;
 }
 
-vector<vector<int>> GameState::get_available_wall_placements(bool compute_new_wall_placements) {
+vector<vector<int>> GameState::get_available_wall_placements() {
     vector<vector<int>> wall_placements;
     
     if (player1) {
@@ -316,8 +319,7 @@ void GameState::update_available_wall_placements() {
 }
 
 bool GameState::is_goal_state() {
-        if (player1) return player1_pos.first == 0;
-        else return player2_pos.first == size-1;
+        return player1_pos.first == 0 || player2_pos.first == size-1;
     }
 
 int GameState::get_winner(){
@@ -354,7 +356,7 @@ void GameState::place_wall(const vector<int> inp, bool check_if_valid, bool comp
     }
 }
 
-void GameState::move_piece(const vector<int> new_move, bool compute_new_wall_placements) {
+void GameState::move_piece(const vector<int> new_move) {
     pair<int, int> pos, otherpos;
 
     if (player1) {
@@ -378,28 +380,36 @@ void GameState::move_piece(const vector<int> new_move, bool compute_new_wall_pla
         player2_pos = new_pos;
     }
 
-    if (compute_new_wall_placements) {
-        vector<vector<int>> wall_placements = get_available_wall_placements(false);
+    vector<vector<int>> wall_placements = get_available_wall_placements();
 
-        for (int i : {-1, 0}) {
-            for (int j : {-1, 0}) {
-                vector<int> w1 = {new_pos.first + i, new_pos.second + j, 1};
-                vector<int> w2 = {new_pos.first + i, new_pos.second + j, 0};
-                vector<int> w3 = {pos.first + i, pos.second + j, 1};
-                vector<int> w4 = {pos.first + i, pos.second + j, 0};
+    for (int i : {-1, 0}) {
+        for (int j : {-1, 0}) {
+            vector<int> w1 = {new_pos.first + i, new_pos.second + j, 1};
+            vector<int> w2 = {new_pos.first + i, new_pos.second + j, 0};
+            vector<int> w3 = {pos.first + i, pos.second + j, 1};
+            vector<int> w4 = {pos.first + i, pos.second + j, 0};
 
-                for (const vector<int>& w : {w1, w2, w3, w4}) {
-                    auto index = std::find(wall_placements.begin(), wall_placements.end(), w);
-                    if (index != wall_placements.end()) {
-                        wall_placements.erase(index);
-                    }
-                    pair<int, int> tpos = std::make_pair(w[0], w[1]);
-                    if (is_wall_placement_valid(tpos, w[2])){
-                        wall_placements.push_back(w);
-                    }
+            for (const vector<int>& w : {w1, w2, w3, w4}) {
+                auto index = std::find(wall_placements.begin(), wall_placements.end(), w);
+                if (index != wall_placements.end()) {
+                    wall_placements.erase(index);
+                }
+                pair<int, int> tpos = std::make_pair(w[0], w[1]);
+                if (is_wall_placement_valid(tpos, w[2])){
+                    wall_placements.push_back(w);
                 }
             }
         }
-        saved_wall_placements = wall_placements;
+    }
+    saved_wall_placements = wall_placements;
+}
+
+
+pair<int, int> GameState::get_cur_player_pos(){
+    if (player1){
+        return player1_pos;
+    }
+    else{
+        return player2_pos;
     }
 }
