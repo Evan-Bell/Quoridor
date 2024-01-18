@@ -17,9 +17,9 @@
 #include <utility>
 #include <algorithm>
 
-#include "include/astar.hpp"
+#include "headers/astar.hpp"
 
-double z_asearch(GameState& game_state, const std::pair<int, int> start_pos, const int end_row, const std::pair<int, int> other_player, const bool skip_parity) {
+inline double z_asearch(GameState& game_state, const std::pair<int, int> start_pos, const int end_row, const std::pair<int, int> other_player, const bool skip_parity) {
     
     if (start_pos.first == end_row) {
         return -1;
@@ -78,7 +78,7 @@ double z_asearch(GameState& game_state, const std::pair<int, int> start_pos, con
 }
 
 
-std::pair<double, double> aStarSearch(GameState& g) {
+inline std::pair<double, double> aStarSearch(GameState& g) {
     double p1 = z_asearch(g, g.player1_pos, 0, g.player2_pos, !g.player1);
     double p2 = z_asearch(g, g.player2_pos, g.size-1, g.player1_pos, g.player1);
     // std::cout << p1 << " " << p2 << std::endl;

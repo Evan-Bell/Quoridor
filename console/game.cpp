@@ -4,6 +4,8 @@
 #include <numeric> // For accumulate
 #include <thread>
 #include <string>
+#include <map>
+#include <unordered_map>
 #include <ctime>
 #include <unordered_set>
 #include <cstdlib>
@@ -12,14 +14,14 @@
 #include <algorithm>
 #include <random>
 
-#include "include/game.hpp"
-#include "include/astar.hpp"
-#include "include/minimax.hpp"
+#include "headers/game.hpp"
 
 
 const std::string DEFAULT_WALL_COLOR = Color::PINK;
 const std::string PLAYER1COLOR = Color::LIGHT_BLUE;
 const std::string PLAYER2COLOR = Color::LIGHT_RED;
+
+const bool IS_WINDOWS = true;
 
 using std::cout;
 using std::endl;
@@ -75,12 +77,49 @@ void Game::player1_user(){
 vector<int> Game::randombot_agent(){
     return randombot_action(game_state);
 }
+
+vector<int> choose_random_from_actions(const vector<pair<double, vector<int>>>& moves){
+
+    for (auto p: moves){
+        cout << p.first << " :    ";
+        for (auto v: p.second) cout << v << " ";
+        cout << endl;
+    }
+
+    // Find the highest value (which is the last element in the multimap)
+    double highestValue = moves[0].first;
+
+    for (auto p: moves){
+        highestValue = max(highestValue, p.first);
+    }
+    
+    vector<vector<int>> best_moves;
+    for (auto p: moves){
+        if (p.first == highestValue){
+            best_moves.push_back(p.second);
+        }
+    }
+
+    for (auto p: best_moves){
+        for (auto v: p) cout << v << " ";
+        cout << endl;
+    }
+
+    // Use a random number generator to select a random key from the highestValueKeys
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> distribution(0, best_moves.size() - 1);
+    int randomIndex = distribution(gen);
+
+    return best_moves[randomIndex];
+}
+
 vector<int> Game::minimax_agent(const int depth){
     double alpha = -std::numeric_limits<double>::infinity();
     double beta = std::numeric_limits<double>::infinity();
     double max_val = -std::numeric_limits<double>::infinity();
-    vector<int> max_move;
-    
+    vector<pair<double, vector<int>>> best_moves;
+
     int swap = (game_state.player1)? 1 : -1;
 
     game_state.check_wall_blocks_exit_on_gen = false;
@@ -93,14 +132,14 @@ vector<int> Game::minimax_agent(const int depth){
         game_state.move_piece(move);
         game_state.player1 = !game_state.player1;
 
-        double reward = swap*minimax_search(game_state, depth-1, alpha, beta, true);
+        double reward = swap*minimax_search(game_state, depth-1, alpha, beta, game_state.player1);
 
         game_state.player1 = !game_state.player1;
         game_state.move_piece(curpos);
 
-        if (reward > max_val){
+        if (reward >= max_val){
             max_val = reward;
-            max_move = move;
+            best_moves.push_back(std::make_pair(reward, move));
         }
     }
     
@@ -114,26 +153,27 @@ vector<int> Game::minimax_agent(const int depth){
         game_state.set_wall(x, y, isHorizontal);
         game_state.player1 = !game_state.player1;
 
-        double reward = swap*minimax_search(game_state, depth-1, alpha, beta, true);
+        double reward = swap*minimax_search(game_state, depth-1, alpha, beta, game_state.player1);
+        // cout << reward << " " << wall[0] <<  " " <<  wall[1] <<  " " <<  wall[2] << endl;
 
         game_state.player1 = !game_state.player1;
         game_state.clear_wall(x, y, isHorizontal);
 
-        if (reward > max_val){
-            max_val = swap*reward;
-            max_move = wall;
+        if (reward >= max_val){
+            max_val = reward;
+            best_moves.push_back(std::make_pair(reward, wall));
         }
     }
 
     game_state.check_wall_blocks_exit_on_gen = true;
 
 
-    return max_move;
+    return choose_random_from_actions(best_moves);
 }
 
 vector<int> Game::pathsearch_agent(){
     double max_val = -std::numeric_limits<double>::infinity();
-    vector<int> max_move;
+    vector<pair<double, vector<int>>> best_moves;
     
     int swap = (game_state.player1)? 1 : -1;
     
@@ -152,9 +192,9 @@ vector<int> Game::pathsearch_agent(){
         
         double reward = swap*((game_state.player1)? 4*dists.second - 3*dists.first : dists.second - dists.first);
 
-        if (reward > max_val){
+        if (reward >= max_val){
             max_val = reward;
-            max_move = move;
+            best_moves.push_back(std::make_pair(reward, move));
         }
     }
     
@@ -170,17 +210,14 @@ vector<int> Game::pathsearch_agent(){
 
         double reward = swap*((game_state.player1)? 4*dists.second - 3*dists.first : dists.second - dists.first);
 
-        if (reward > max_val){
-            max_val = swap*reward;
-            max_move = wall;
+        if (reward >= max_val){
+            max_val = reward;
+            best_moves.push_back(std::make_pair(reward, wall));
         }
     }
-    return max_move;
+    return choose_random_from_actions(best_moves);
 }
 
-void choose_random_from_actions(vector<vector<int>>& actdions){
-    return;
-}
 
 void Game::execute_action( vector<int> action){
     if (action.size() == 2){
@@ -211,7 +248,7 @@ bool Game::player_simulation() {
         action = randombot_agent();
     }
     else if (player_simulation_algorithms[index] == "minimax") {
-        action = minimax_agent(2);
+        action = minimax_agent(3);
     }
     // else if (player_simulation_algorithms[index] == "online-bot") {
     //     while (online_move == std::make_pair(0, 0)) {
@@ -351,15 +388,24 @@ void Game::print_board() {
         return;
     }
 
+
+    string ver_wall = " \u2503";
+    string hor_wall = "\u2501";
+    
+    if (IS_WINDOWS){
+        ver_wall = " |";
+        hor_wall = "-";
+    }
+
     GameState& g = game_state;
 
     for (int i = 0; i < g.size; ++i) {
         if (i == 0) {
-            cout << "      " << std::setw(2) << i << "  " << DEFAULT_WALL_COLOR << static_cast<char>('a' + i) << Color::RESET;
+            cout << "      " << std::setw(2) << i << " " << DEFAULT_WALL_COLOR << static_cast<char>('a' + i) << Color::RESET;
         } else if (i == g.size - 1) {
             cout << " " << std::setw(2) << i << "  ";
         } else {
-            cout << " " << std::setw(2) << i << "  " << DEFAULT_WALL_COLOR << static_cast<char>('a' + i) << Color::RESET;
+            cout << "  " << i << "  " << DEFAULT_WALL_COLOR << static_cast<char>('a' + i) << Color::RESET;
         }
     }
     cout << endl << endl;
@@ -386,9 +432,9 @@ void Game::print_board() {
                     }
                 } else {
                     if (g.is_ver_wall(min(g.walls_dim - 1, x), y)) {
-                        cout << getWallColor(g, min(g.walls_dim - 1, x), y) << " \u2503" << Color::RESET;
+                        cout << getWallColor(g, min(g.walls_dim - 1, x), y) << ver_wall << Color::RESET;
                     } else if (g.is_ver_wall(max(0, x - 1), y)) {
-                        cout << getWallColor(g, max(0, x - 1), y) << " \u2503" << Color::RESET;
+                        cout << getWallColor(g, max(0, x - 1), y) << ver_wall << Color::RESET;
                     } else {
                         cout << " |";
                     }
@@ -401,19 +447,19 @@ void Game::print_board() {
                     if (g.is_hor_wall(x, min(g.walls_dim - 1, y))) {
                         string line = "";
                         for (int k = 0; k < 5; ++k) {
-                            line += "\u2501";
+                            line += hor_wall;
                         }
                         cout << getWallColor(g, x, min(g.walls_dim - 1, y)) << line << Color::RESET;
                     } else if (g.is_hor_wall(x, max(0, y - 1))) {
                         string line = "";
                         for (int k = 0; k < 5; ++k) {
-                            line += "\u2501";
+                            line += hor_wall;
                         }
                         cout << getWallColor(g, x, max(0, y - 1)) << line << Color::RESET;
                     } else {
                         string line = "";
                         for (int k = 0; k < 5; ++k) {
-                            line += "\u23AF";
+                            line += hor_wall;
                         }
                         cout << line;
                     }
@@ -441,7 +487,7 @@ void Game::print_colored_output(const string& text, const string& color) {
 
 int main() {
     // Your program code here
-    Game g = Game(false, true, 9, 0.00);
+    Game g = Game(false, true, 1, 1.00);
     g.print_commands();
     g.play();
     return 0;

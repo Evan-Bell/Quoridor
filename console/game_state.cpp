@@ -13,9 +13,8 @@
 #include <algorithm>
 
 
-#include "include/game_state.hpp"
+#include "headers/game_state.hpp"
 #include "astar.cpp"
-#include "minimax.cpp"
 
 using std::cout;
 using std::endl;

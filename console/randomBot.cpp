@@ -2,7 +2,7 @@
 #include <vector>
 #include <random>
 
-#include "include/randomBot.hpp"
+#include "headers/randomBot.hpp"
 
 std::vector<int> randombot_action(GameState& game_state) {
     double move_prob = 0.3;

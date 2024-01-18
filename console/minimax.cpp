@@ -17,7 +17,7 @@
 #include <utility>
 #include <algorithm>
 
-#include "include/minimax.hpp"
+#include "headers/minimax.hpp"
 
 
 double minimax_search(GameState& game_state, const int depth, double alpha, double beta, const bool is_max){
@@ -41,6 +41,10 @@ double minimax_search(GameState& game_state, const int depth, double alpha, doub
         
         vector<vector<int> > available_moves = game_state.get_available_moves();
         for (vector<int>& move : available_moves){
+            // Alpha-Beta Pruning
+            if (beta <= alpha){
+                break;
+            }
 
             pair<int, int> temp = game_state.get_cur_player_pos();
             vector<int> curpos = {temp.first, temp.second};
@@ -53,15 +57,15 @@ double minimax_search(GameState& game_state, const int depth, double alpha, doub
             
             best_val = std::max(best_val, reward);
             alpha = std::max(alpha, best_val);
-
-            // Alpha-Beta Pruning
-            if (beta <= alpha){
-                break;
-            }
         }
         
         vector<vector<int>> wall_placements = game_state.get_available_wall_placements();
         for (vector<int>& wall : wall_placements){
+            // Alpha-Beta Pruning
+            if (beta <= alpha){
+                break;
+            }
+
             int x = wall[0];
             int y = wall[1];
             bool isHorizontal = wall[2];
@@ -74,19 +78,20 @@ double minimax_search(GameState& game_state, const int depth, double alpha, doub
 
             best_val = std::max(best_val, reward);
             alpha = std::max(alpha, best_val);
-
-            // Alpha-Beta Pruning
-            if (beta <= alpha){
-                break;
-            }
         }
-        return best_val;
+
+        return (best_val == -std::numeric_limits<double>::infinity())? std::numeric_limits<double>::infinity() : best_val;
     }
+    
     else{
         double best_val = std::numeric_limits<double>::infinity();
         
         vector<vector<int> > available_moves = game_state.get_available_moves();
         for (vector<int>& move : available_moves){
+            // Alpha-Beta Pruning
+            if (beta <= alpha){
+                break;
+            }
 
             pair<int, int> temp = game_state.get_cur_player_pos();
             vector<int> curpos = {temp.first, temp.second};
@@ -99,15 +104,15 @@ double minimax_search(GameState& game_state, const int depth, double alpha, doub
             
             best_val = std::min(best_val, reward);
             beta = std::min(beta, best_val);
-
-            // Alpha-Beta Pruning
-            if (beta <= alpha){
-                break;
-            }
         }
         
         vector<vector<int>> wall_placements = game_state.get_available_wall_placements();
         for (vector<int>& wall : wall_placements){
+            // Alpha-Beta Pruning
+            if (beta <= alpha){
+                break;
+            }
+
             int x = wall[0];
             int y = wall[1];
             bool isHorizontal = wall[2];
@@ -120,12 +125,8 @@ double minimax_search(GameState& game_state, const int depth, double alpha, doub
 
             best_val = std::min(best_val, reward);
             beta = std::min(beta, best_val);
-
-            // Alpha-Beta Pruning
-            if (beta <= alpha){
-                break;
-            }
         }
-        return best_val;
+
+        return (best_val == std::numeric_limits<double>::infinity())? -std::numeric_limits<double>::infinity() : best_val;
     }
 }

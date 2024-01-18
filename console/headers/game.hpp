@@ -17,9 +17,11 @@
 // #include <algorithm>
 
 
+#include "astar.hpp"
 #include "game_state.hpp"
 #include "randomBot.hpp"
 #include "color.hpp"
+#include "minimax.hpp"
 
 using std::vector;
 using std::string;
@@ -74,7 +76,6 @@ public:
     static string getWallColor(GameState& g, int i, int j);
 
     static void print_colored_output(const string& text, const string& color);
-    // Add other member functions and variables here.
 };
 
 
