@@ -23,12 +23,13 @@
 double minimax_search(GameState& game_state, const int depth, double alpha, double beta, const bool is_max){
     if (game_state.is_goal_state() || depth == 0){
         pair<double, double> dists = aStarSearch(game_state);
+        
         if (dists.first == std::numeric_limits<double>::infinity() || dists.second == std::numeric_limits<double>::infinity()){
             if (is_max){
                 return std::numeric_limits<double>::infinity();
             }
             else{
-               return -std::numeric_limits<double>::infinity();
+                return -std::numeric_limits<double>::infinity();
             }
         }
         
@@ -70,11 +71,12 @@ double minimax_search(GameState& game_state, const int depth, double alpha, doub
             int y = wall[1];
             bool isHorizontal = wall[2];
 
-            game_state.set_wall(x, y, isHorizontal);
+            game_state.set_wall(x, y, isHorizontal, true);
             game_state.player1 = !game_state.player1;
             double reward = minimax_search(game_state, depth-1, alpha, beta, false);
             game_state.player1 = !game_state.player1;
             game_state.clear_wall(x, y, isHorizontal);
+            game_state.saved_wall_placements = wall_placements; // reinstate free walls
 
             best_val = std::max(best_val, reward);
             alpha = std::max(alpha, best_val);
@@ -117,11 +119,12 @@ double minimax_search(GameState& game_state, const int depth, double alpha, doub
             int y = wall[1];
             bool isHorizontal = wall[2];
 
-            game_state.set_wall(x, y, isHorizontal);
+            game_state.set_wall(x, y, isHorizontal, true);
             game_state.player1 = !game_state.player1;
             double reward = minimax_search(game_state, depth-1, alpha, beta, true);
             game_state.player1 = !game_state.player1;
             game_state.clear_wall(x, y, isHorizontal);
+            game_state.saved_wall_placements = wall_placements; // reinstate free walls
 
             best_val = std::min(best_val, reward);
             beta = std::min(beta, best_val);

@@ -16,21 +16,11 @@
 
 #include "headers/game.hpp"
 
-
-const std::string DEFAULT_WALL_COLOR = Color::PINK;
-const std::string PLAYER1COLOR = Color::LIGHT_BLUE;
-const std::string PLAYER2COLOR = Color::LIGHT_RED;
-
-const bool IS_WINDOWS = true;
-
 using std::cout;
 using std::endl;
 using std::min;
 using std::max;
 
-void p(int i){
-    cout << i << endl;
-}
 
 Game::Game(bool user_sim, bool verbose, int rounds, double sim_delay)
         : is_user_sim(user_sim), 
@@ -80,11 +70,11 @@ vector<int> Game::randombot_agent(){
 
 vector<int> choose_random_from_actions(const vector<pair<double, vector<int>>>& moves){
 
-    for (auto p: moves){
-        cout << p.first << " :    ";
-        for (auto v: p.second) cout << v << " ";
-        cout << endl;
-    }
+    // for (auto p: moves){
+    //     cout << p.first << " :    ";
+    //     for (auto v: p.second) cout << v << " ";
+    //     cout << endl;
+    // }
 
     // Find the highest value (which is the last element in the multimap)
     double highestValue = moves[0].first;
@@ -100,10 +90,10 @@ vector<int> choose_random_from_actions(const vector<pair<double, vector<int>>>& 
         }
     }
 
-    for (auto p: best_moves){
-        for (auto v: p) cout << v << " ";
-        cout << endl;
-    }
+    // for (auto p: best_moves){
+    //     for (auto v: p) cout << v << " ";
+    //     cout << endl;
+    // }
 
     // Use a random number generator to select a random key from the highestValueKeys
     std::random_device rd;
@@ -158,6 +148,7 @@ vector<int> Game::minimax_agent(const int depth){
 
         game_state.player1 = !game_state.player1;
         game_state.clear_wall(x, y, isHorizontal);
+        game_state.saved_wall_placements = wall_placements; // reinstate free walls
 
         if (reward >= max_val){
             max_val = reward;
@@ -190,7 +181,7 @@ vector<int> Game::pathsearch_agent(){
         game_state.player1 = !game_state.player1;
         game_state.move_piece(curpos);
         
-        double reward = swap*((game_state.player1)? 4*dists.second - 3*dists.first : dists.second - dists.first);
+        double reward = swap*(dists.second - dists.first);
 
         if (reward >= max_val){
             max_val = reward;
@@ -204,20 +195,23 @@ vector<int> Game::pathsearch_agent(){
         int y = wall[1];
         bool isHorizontal = wall[2];
 
-        game_state.set_wall(x, y, isHorizontal);
+        game_state.set_wall(x, y, isHorizontal, false);
+        game_state.player1 = !game_state.player1;
         pair<double, double> dists = aStarSearch(game_state);
+        game_state.player1 = !game_state.player1;
         game_state.clear_wall(x, y, isHorizontal);
 
         double reward = swap*((game_state.player1)? 4*dists.second - 3*dists.first : dists.second - dists.first);
 
-        if (reward >= max_val){
-            max_val = reward;
-            best_moves.push_back(std::make_pair(reward, wall));
+        if (dists.first != std::numeric_limits<double>::infinity() && dists.second != std::numeric_limits<double>::infinity()){
+            if (reward >= max_val){
+                max_val = reward;
+                best_moves.push_back(std::make_pair(reward, wall));
+            }
         }
     }
     return choose_random_from_actions(best_moves);
 }
-
 
 void Game::execute_action( vector<int> action){
     if (action.size() == 2){
@@ -248,7 +242,7 @@ bool Game::player_simulation() {
         action = randombot_agent();
     }
     else if (player_simulation_algorithms[index] == "minimax") {
-        action = minimax_agent(3);
+        action = minimax_agent(2);
     }
     // else if (player_simulation_algorithms[index] == "online-bot") {
     //     while (online_move == std::make_pair(0, 0)) {
@@ -296,9 +290,9 @@ void Game::play() {
         //game_state.get_available_wall_placements();
         cout << endl;
         cout << "\n";
-        print_game_stats();
+        game_state.print_game_stats();
         cout << "\n";
-        print_board();
+        game_state.print_board();
         cout << endl;
 
         if (game_state.is_goal_state()) {
@@ -325,13 +319,13 @@ void Game::play() {
 
             if (is_user_sim) {
                 if (winner_ind == 0) {
-                    print_colored_output("You won!", Color::GREEN);
+                    print_colored_output("You won!", Color_GREEN);
                 } else {
-                    print_colored_output("You lost!", Color::RED);
+                    print_colored_output("You lost!", Color_RED);
                 }
             } else {
                 string winner = (winner_ind == 0) ? "P1" : "P2";
-                print_colored_output("The winner is " + winner + ".", Color::CYAN);
+                print_colored_output("The winner is " + winner + ".", Color_CYAN);
                 if (rounds != 0) {
                     cout << "restarting in 3:" << std::flush;
                     std::this_thread::sleep_for(std::chrono::seconds(3));
@@ -370,124 +364,14 @@ void Game::play() {
     }
 }
 
-void Game::print_game_stats() {
-    if (!verbose) {
-        return;
-    }
-    
-    GameState& g = game_state;
-
-    cout << PLAYER1COLOR << std::left << std::setw(15) << "Player 1 walls" << Color::WHITE << "|" << PLAYER2COLOR << std::left << std::setw(15) << "Player 2 walls" << Color::RESET << "|" << endl;
-    cout << std::left << std::setw(15) << "" << "|" << std::left << std::setw(15) << "" << "|" << endl;
-    cout << std::left << std::setw(15) << g.walls_per_player.first << "|" << std::left << std::setw(15) << g.walls_per_player.second << "|" << endl;
-    cout << endl << endl;
-}
-
-void Game::print_board() {
-    if (!verbose) {
-        return;
-    }
-
-
-    string ver_wall = " \u2503";
-    string hor_wall = "\u2501";
-    
-    if (IS_WINDOWS){
-        ver_wall = " |";
-        hor_wall = "-";
-    }
-
-    GameState& g = game_state;
-
-    for (int i = 0; i < g.size; ++i) {
-        if (i == 0) {
-            cout << "      " << std::setw(2) << i << " " << DEFAULT_WALL_COLOR << static_cast<char>('a' + i) << Color::RESET;
-        } else if (i == g.size - 1) {
-            cout << " " << std::setw(2) << i << "  ";
-        } else {
-            cout << "  " << i << "  " << DEFAULT_WALL_COLOR << static_cast<char>('a' + i) << Color::RESET;
-        }
-    }
-    cout << endl << endl;
-
-    for (int i = 0; i < g.walls_dim + g.size; ++i) {
-        if (i % 2 == 0) {
-            cout << std::setw(2) << i / 2 << "  ";
-        } else {
-            cout << DEFAULT_WALL_COLOR << std::setw(2) << static_cast<char>('a' + i / 2) << Color::RESET << "  ";
-        }
-
-        for (int j = 0; j < g.walls_dim + g.size; ++j) {
-            if (i % 2 == 0) {
-                int x = i / 2;
-                int y = j / 2;
-
-                if (j % 2 == 0) {
-                    if (g.player1_pos == std::make_pair(x, y)) {
-                        cout << PLAYER1COLOR << " P1 " << Color::RESET;
-                    } else if (g.player2_pos == std::make_pair(x, y)) {
-                        cout << PLAYER2COLOR << " P2 " << Color::RESET;
-                    } else {
-                        cout << "    ";
-                    }
-                } else {
-                    if (g.is_ver_wall(min(g.walls_dim - 1, x), y)) {
-                        cout << getWallColor(g, min(g.walls_dim - 1, x), y) << ver_wall << Color::RESET;
-                    } else if (g.is_ver_wall(max(0, x - 1), y)) {
-                        cout << getWallColor(g, max(0, x - 1), y) << ver_wall << Color::RESET;
-                    } else {
-                        cout << " |";
-                    }
-                }
-            } else {
-                if (j % 2 == 0) {
-                    int x = i / 2;
-                    int y = j / 2;
-
-                    if (g.is_hor_wall(x, min(g.walls_dim - 1, y))) {
-                        string line = "";
-                        for (int k = 0; k < 5; ++k) {
-                            line += hor_wall;
-                        }
-                        cout << getWallColor(g, x, min(g.walls_dim - 1, y)) << line << Color::RESET;
-                    } else if (g.is_hor_wall(x, max(0, y - 1))) {
-                        string line = "";
-                        for (int k = 0; k < 5; ++k) {
-                            line += hor_wall;
-                        }
-                        cout << getWallColor(g, x, max(0, y - 1)) << line << Color::RESET;
-                    } else {
-                        string line = "";
-                        for (int k = 0; k < 5; ++k) {
-                            line += hor_wall;
-                        }
-                        cout << line;
-                    }
-                } else {
-                    if (!g.is_hor_wall(i/2, j/2) && !g.is_ver_wall(i/2, j/2)) {
-                        cout << "o";
-                    } else {
-                        cout << getWallColor(g, i / 2, j / 2) << "o" << Color::RESET;
-                    }
-                }
-            }
-        }
-        cout << endl;
-    }
-}
-
-string Game::getWallColor(GameState& g, int i, int j) {
-    return (g.is_wall_player1(i, j)) ? PLAYER1COLOR : PLAYER2COLOR;
-}
-
 void Game::print_colored_output(const string& text, const string& color) {
-    cout << '\r' << color << text << Color::RESET << endl << std::flush;
+    cout << '\r' << color << text << Color_RESET << endl << std::flush;
 }
 
 
 int main() {
     // Your program code here
-    Game g = Game(false, true, 1, 1.00);
+    Game g = Game(false, true, 9, 0.00);
     g.print_commands();
     g.play();
     return 0;

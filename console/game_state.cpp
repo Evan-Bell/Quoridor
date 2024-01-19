@@ -27,6 +27,14 @@ using std::max;
 
 
 
+const std::string DEFAULT_WALL_COLOR = Color_PINK;
+const std::string PLAYER1COLOR = Color_GREEN;
+const std::string PLAYER2COLOR = Color_LIGHT_RED;
+
+
+const bool IS_WINDOWS = true;
+
+
 GameState::GameState() 
         : player1(true), 
         size(SIZE), 
@@ -82,20 +90,17 @@ bool GameState::is_ver_wall(const int x, const int y){
     return false;
 }
 
-bool GameState::is_wall_player1(const int x, const int y){
-    if (((player_walls[x] >> y) & 1) == 0){
-        return true;
-    }
-    return false;
-}
-
-void GameState::set_wall(const int x, const int y, const bool isHorizontal){
+void GameState::set_wall(const int x, const int y, const bool isHorizontal, bool compute_new_wall_placements){
     if (isHorizontal){
         hor_walls[x] |= (1 << y);
     }
     else{
         ver_walls[x] |= (1 << y);
     }
+    if (compute_new_wall_placements){
+        update_available_wall_placements();
+    }
+    
 }
 
 void GameState::set_which_player_placed_wall(const int x, const int y, const bool is_player1){
@@ -252,10 +257,10 @@ bool GameState::is_wall_placement_valid(const pair<int,int>& pos, const bool isH
 
 bool GameState::is_wall_blocking_exit(const pair<int, int> pos, const int isHorizontal) {
     
-    set_wall(pos.first, pos.second, isHorizontal);
+    set_wall(pos.first, pos.second, isHorizontal, false);
 
     std::pair<double, double> path_dists = aStarSearch(*this);
-    bool exit_blocked = (path_dists.first == std::numeric_limits<double>::infinity() or path_dists.second == std::numeric_limits<double>::infinity());
+    bool exit_blocked = (path_dists.first == std::numeric_limits<double>::infinity() || path_dists.second == std::numeric_limits<double>::infinity());
     // bool exit_blocked = false;
     
     clear_wall(pos.first, pos.second, isHorizontal);
@@ -344,7 +349,7 @@ void GameState::place_wall(const vector<int> inp, bool check_if_valid, bool comp
         walls_per_player.second--;
     }
 
-    set_wall(x, y, isHorizontal);
+    set_wall(x, y, isHorizontal, false);
     set_which_player_placed_wall(x, y, player1);
 
     // Update wall placements
@@ -403,6 +408,107 @@ void GameState::move_piece(const vector<int> new_move) {
     saved_wall_placements = wall_placements;
 }
 
+void GameState::print_game_stats() {
+
+    cout << PLAYER1COLOR << std::left << std::setw(15) << "Player 1 walls" << Color_WHITE << "|" << PLAYER2COLOR << std::left << std::setw(15) << "Player 2 walls" << Color_RESET << "|" << endl;
+    cout << std::left << std::setw(15) << "" << "|" << std::left << std::setw(15) << "" << "|" << endl;
+    cout << std::left << std::setw(15) << walls_per_player.first << "|" << std::left << std::setw(15) << walls_per_player.second << "|" << endl;
+    cout << endl << endl;
+}
+
+void GameState::print_board() {
+
+    string ver_wall = " \u2503";
+    string hor_wall = "\u2501";
+    
+    if (IS_WINDOWS){
+        ver_wall = " |";
+        hor_wall = "-";
+    }
+
+    for (int i = 0; i < size; ++i) {
+        if (i == 0) {
+            cout << "      " << std::setw(2) << i << " " << DEFAULT_WALL_COLOR << static_cast<char>('a' + i) << Color_RESET;
+        } else if (i == size - 1) {
+            cout << "  " << std::setw(2) << i << " ";
+        } else {
+            cout << "  " << std::setw(2) << i << " " << DEFAULT_WALL_COLOR << static_cast<char>('a' + i) << Color_RESET;
+        }
+    }
+    cout << endl << endl;
+
+    for (int i = 0; i < walls_dim + size; ++i) {
+        if (i % 2 == 0) {
+            cout << std::setw(2) << i / 2 << "  ";
+        } else {
+            cout << DEFAULT_WALL_COLOR << std::setw(2) << static_cast<char>('a' + i / 2) << Color_RESET << "  ";
+        }
+
+        for (int j = 0; j < walls_dim + size; ++j) {
+            if (i % 2 == 0) {
+                int x = i / 2;
+                int y = j / 2;
+
+                if (j % 2 == 0) {
+                    if (player1_pos == std::make_pair(x, y)) {
+                        cout << PLAYER1COLOR << " P1 " << Color_RESET;
+                    } else if (player2_pos == std::make_pair(x, y)) {
+                        cout << PLAYER2COLOR << " P2 " << Color_RESET;
+                    } else {
+                        cout << "    ";
+                    }
+                } else {
+                    if (is_ver_wall(min(walls_dim - 1, x), y)) {
+                        cout << getWallColor(min(walls_dim - 1, x), y) << ver_wall << Color_RESET;
+                    } else if (is_ver_wall(max(0, x - 1), y)) {
+                        cout << getWallColor(max(0, x - 1), y) << ver_wall << Color_RESET;
+                    } else {
+                        cout << " |";
+                    }
+                }
+            } else {
+                if (j % 2 == 0) {
+                    int x = i / 2;
+                    int y = j / 2;
+
+                    if (is_hor_wall(x, min(walls_dim - 1, y))) {
+                        string line = "";
+                        for (int k = 0; k < 5; ++k) {
+                            line += hor_wall;
+                        }
+                        cout << getWallColor(x, min(walls_dim - 1, y)) << line << Color_RESET;
+                    } else if (is_hor_wall(x, max(0, y - 1))) {
+                        string line = "";
+                        for (int k = 0; k < 5; ++k) {
+                            line += hor_wall;
+                        }
+                        cout << getWallColor(x, max(0, y - 1)) << line << Color_RESET;
+                    } else {
+                        string line = "";
+                        for (int k = 0; k < 5; ++k) {
+                            line += hor_wall;
+                        }
+                        cout << line;
+                    }
+                } else {
+                    if (!is_hor_wall(i/2, j/2) && !is_ver_wall(i/2, j/2)) {
+                        cout << "o";
+                    } else {
+                        cout << getWallColor(i / 2, j / 2) << "o" << Color_RESET;
+                    }
+                }
+            }
+        }
+        cout << endl;
+    }
+}
+
+std::string GameState::getWallColor(const int i, const int j) {
+    if (((player_walls[i] >> j) & 1) == 0){
+        return PLAYER1COLOR;
+    }
+    return PLAYER2COLOR;
+}
 
 pair<int, int> GameState::get_cur_player_pos(){
     if (player1){

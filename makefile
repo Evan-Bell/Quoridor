@@ -23,7 +23,9 @@ $(BUILD_DIR):
 
 # Clean up all generated files
 clean:
-	rm -rf $(BUILD_DIR) $(EXECUTABLE)
+	del /q $(BUILD_DIR)\*.*
+	rmdir /q /s $(BUILD_DIR)
+	del /q $(EXECUTABLE)
 
 # Phony targets (targets that don't represent files)
 .PHONY: all clean
@@ -32,4 +34,11 @@ clean:
 all: $(EXECUTABLE)
 
 run: $(EXECUTABLE)
+	./$(EXECUTABLE)
+
+t: $(EXECUTABLE)
+	del /q $(BUILD_DIR)\*.*
+	rmdir /q /s $(BUILD_DIR)
+	del /q $(EXECUTABLE)
+	$(EXECUTABLE)
 	./$(EXECUTABLE)

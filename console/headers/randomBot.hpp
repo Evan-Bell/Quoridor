@@ -5,6 +5,6 @@
 
 #include "game_state.hpp"
 
-vector<int> randombot_action(GameState& game_state);
+std::vector<int> randombot_action(GameState& game_state);
 
 #endif // RANDOMBOT_H

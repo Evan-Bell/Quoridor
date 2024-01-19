@@ -16,7 +16,7 @@
 // #include <algorithm>
 
 #include "constants.hpp"
-// #include "astar.hpp"
+#include "color.hpp"
 
 using std::vector;
 using std::pair;
@@ -46,9 +46,7 @@ public:
 
     bool is_ver_wall(const int x, const int y);
 
-    bool is_wall_player1(const int x, const int y);
-
-    void set_wall(const int x, const int y, const bool isHorizontal);
+    void set_wall(const int x, const int y, const bool isHorizontal, bool compute_new_wall_placements = true);
 
     void set_which_player_placed_wall(const int x, const int y, const bool is_player1);
 
@@ -75,6 +73,12 @@ public:
     void place_wall(vector<int> inp, bool check_if_valid = true, bool compute_new_wall_placements = true);
 
     void move_piece(vector<int> new_move);
+    
+    void print_game_stats();
+
+    void print_board();
+
+    std::string getWallColor(int i, int j);
 
     pair<int, int> get_cur_player_pos();
 };

@@ -18,10 +18,10 @@
 
 
 #include "astar.hpp"
-#include "game_state.hpp"
 #include "randomBot.hpp"
-#include "color.hpp"
 #include "minimax.hpp"
+
+class GameState; //Forward dec
 
 using std::vector;
 using std::string;
@@ -41,7 +41,7 @@ public:
     bool is_user_sim;
 
     GameState game_state;
-    vector<string> player_simulation_algorithms = {"path-search", "minimax"};
+    vector<string> player_simulation_algorithms = {"randomBot", "path-search"};
     vector<string> algorithms = {"randomBot", "impatientBot", "minimax", "path-search", "online-bot"};
     vector<int> wins = {0, 0};
     vector<pair<vector<double>, vector<double>>> execution_times;
@@ -68,12 +68,6 @@ public:
     bool player_simulation();
 
     void play();
-    
-    void print_game_stats();
-
-    void print_board();
-
-    static string getWallColor(GameState& g, int i, int j);
 
     static void print_colored_output(const string& text, const string& color);
 };
