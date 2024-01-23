@@ -33,7 +33,7 @@ double minimax_search(GameState& game_state, const int depth, double alpha, doub
             }
         }
         
-        double reward = ((game_state.player1)? 4*dists.second - 3*dists.first : dists.second - dists.first);
+        double reward = dists.second - dists.first;// + game_state.walls_per_player.first - game_state.walls_per_player.second;
         return reward;
     }
 
@@ -71,7 +71,7 @@ double minimax_search(GameState& game_state, const int depth, double alpha, doub
             int y = wall[1];
             bool isHorizontal = wall[2];
 
-            game_state.set_wall(x, y, isHorizontal, true);
+            game_state.set_wall(x, y, isHorizontal, depth>1);
             game_state.player1 = !game_state.player1;
             double reward = minimax_search(game_state, depth-1, alpha, beta, false);
             game_state.player1 = !game_state.player1;
@@ -119,7 +119,7 @@ double minimax_search(GameState& game_state, const int depth, double alpha, doub
             int y = wall[1];
             bool isHorizontal = wall[2];
 
-            game_state.set_wall(x, y, isHorizontal, true);
+            game_state.set_wall(x, y, isHorizontal, depth>1);
             game_state.player1 = !game_state.player1;
             double reward = minimax_search(game_state, depth-1, alpha, beta, true);
             game_state.player1 = !game_state.player1;

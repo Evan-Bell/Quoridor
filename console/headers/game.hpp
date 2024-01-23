@@ -41,7 +41,7 @@ public:
     bool is_user_sim;
 
     GameState game_state;
-    vector<string> player_simulation_algorithms = {"randomBot", "path-search"};
+    vector<string> player_simulation_algorithms = {"path-search", "minimax"};
     vector<string> algorithms = {"randomBot", "impatientBot", "minimax", "path-search", "online-bot"};
     vector<int> wins = {0, 0};
     vector<pair<vector<double>, vector<double>>> execution_times;
@@ -55,7 +55,7 @@ public:
 
     void quick_run(const string& bot1, const string& bot2) ;
 
-    void player1_user();
+    void player_user();
 
     vector<int> randombot_agent();
 

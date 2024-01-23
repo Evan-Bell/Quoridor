@@ -64,6 +64,8 @@ public:
 
     vector<vector<int>> get_available_wall_placements();
 
+    vector<vector<int>> smart_get_available_wall_placements(const int dist = 1);
+
     void update_available_wall_placements();
 
     bool is_goal_state();

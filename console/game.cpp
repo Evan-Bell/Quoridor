@@ -60,8 +60,34 @@ void Game::quick_run(const string& bot1, const string& bot2) {
     cout << '\n' << endl;
 }
 
-void Game::player1_user(){
-    return;
+void Game::player_user(){
+    std::string userInput;
+    std::vector<int> userVector;
+    while(true) {
+        // Prompt the user for input
+        std::cout << "Enter three or two digits separated by spaces: ";
+        std::getline(std::cin, userInput);
+
+        // Tokenize the input and convert to integers
+        std::istringstream iss(userInput);
+        int num;
+        while (iss >> num) {
+            userVector.push_back(num);
+        }
+
+        // Check the size of the vector and validate the input
+        if (userVector.size() == 2 || userVector.size() == 3) {
+            // Print the vector
+            std::cout << "User input as a vector: ";
+            for (int i = 0; i < userVector.size(); ++i) {
+                std::cout << userVector[i] << " ";
+            }
+            execute_action(userVector);
+            return;
+        } else {
+            std::cout << "Invalid input. Please enter two or three digits." << std::endl;
+        }
+    }
 }
 
 vector<int> Game::randombot_agent(){
@@ -337,9 +363,9 @@ void Game::play() {
             continue;
         }
         
-        if (game_state.player1) {
+        if (!game_state.player1) {
             if (is_user_sim) {
-                player1_user();
+                player_user();
             } else {
                 bool res = player_simulation();
                 if (!res) {
@@ -371,7 +397,7 @@ void Game::print_colored_output(const string& text, const string& color) {
 
 int main() {
     // Your program code here
-    Game g = Game(false, true, 9, 0.00);
+    Game g = Game(false, true, 3, 0.00);
     g.print_commands();
     g.play();
     return 0;
