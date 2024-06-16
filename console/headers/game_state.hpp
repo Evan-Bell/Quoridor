@@ -15,6 +15,22 @@
 // #include <utility>
 // #include <algorithm>
 
+#include <iostream>
+#include <iomanip> // Include the header for std::setw
+// #include <vector>
+#include <numeric> // For accumulate
+#include <thread>
+#include <string>
+#include <ctime>
+#include <unordered_set>
+#include <cstdlib>
+#include <chrono>
+#include <thread>
+#include <utility>
+#include <algorithm>
+
+
+
 #include "constants.hpp"
 #include "color.hpp"
 
@@ -75,7 +91,7 @@ public:
     void place_wall(vector<int> inp, bool check_if_valid = true, bool compute_new_wall_placements = true);
 
     void move_piece(vector<int> new_move);
-    
+
     void print_game_stats();
 
     void print_board();

@@ -1,18 +1,3 @@
-#include <iostream>
-#include <iomanip> // Include the header for std::setw
-#include <vector>
-#include <numeric> // For accumulate
-#include <thread>
-#include <string>
-#include <map>
-#include <unordered_map>
-#include <ctime>
-#include <unordered_set>
-#include <cstdlib>
-#include <chrono>
-#include <utility>
-#include <algorithm>
-#include <random>
 
 #include "headers/game.hpp"
 
@@ -23,9 +8,9 @@ using std::max;
 
 
 Game::Game(bool user_sim, bool verbose, int rounds, double sim_delay)
-        : is_user_sim(user_sim), 
+        : is_user_sim(user_sim),
         verbose(verbose),
-        rounds(rounds), 
+        rounds(rounds),
         sim_delay(sim_delay)
         {
             game_state = GameState();
@@ -108,7 +93,7 @@ vector<int> choose_random_from_actions(const vector<pair<double, vector<int>>>& 
     for (auto p: moves){
         highestValue = max(highestValue, p.first);
     }
-    
+
     vector<vector<int>> best_moves;
     for (auto p: moves){
         if (p.first == highestValue){
@@ -139,10 +124,10 @@ vector<int> Game::minimax_agent(const int depth){
     int swap = (game_state.player1)? 1 : -1;
 
     game_state.check_wall_blocks_exit_on_gen = false;
-    
+
     vector<vector<int> > available_moves = game_state.get_available_moves();
     for (vector<int>& move : available_moves){
-        
+
         pair<int, int> temp = game_state.get_cur_player_pos();
         vector<int> curpos = {temp.first, temp.second};
         game_state.move_piece(move);
@@ -158,7 +143,7 @@ vector<int> Game::minimax_agent(const int depth){
             best_moves.push_back(std::make_pair(reward, move));
         }
     }
-    
+
     vector<vector<int>> wall_placements = game_state.get_available_wall_placements();
 
     for (vector<int>& wall : wall_placements){
@@ -191,9 +176,9 @@ vector<int> Game::minimax_agent(const int depth){
 vector<int> Game::pathsearch_agent(){
     double max_val = -std::numeric_limits<double>::infinity();
     vector<pair<double, vector<int>>> best_moves;
-    
+
     int swap = (game_state.player1)? 1 : -1;
-    
+
     vector<vector<int> > available_moves = game_state.get_available_moves();
     for (vector<int>& move : available_moves){
 
@@ -206,7 +191,7 @@ vector<int> Game::pathsearch_agent(){
 
         game_state.player1 = !game_state.player1;
         game_state.move_piece(curpos);
-        
+
         double reward = swap*(dists.second - dists.first);
 
         if (reward >= max_val){
@@ -214,7 +199,7 @@ vector<int> Game::pathsearch_agent(){
             best_moves.push_back(std::make_pair(reward, move));
         }
     }
-    
+
     vector<vector<int>> wall_placements = game_state.get_available_wall_placements();
     for (vector<int>& wall : wall_placements){
         int x = wall[0];
@@ -335,10 +320,10 @@ void Game::play() {
 
             hist_per_round.emplace_back(vector<vector<int>>{}, vector<vector<int>>{});
             execution_times.emplace_back(vector<double>{}, vector<double>{});
-            
+
             cout << "Execution averages this round: " <<  avgtime1 << ", " << avgtime2 << endl;
             cout << "Number of moves this round: " <<  moves1 << ", " << moves2 << endl;
-            
+
             wins[winner_ind]++;
             rounds--;
             game_state.reinitialize();
@@ -362,7 +347,7 @@ void Game::play() {
             }
             continue;
         }
-        
+
         if (!game_state.player1) {
             if (is_user_sim) {
                 player_user();
@@ -389,16 +374,6 @@ void Game::play() {
         game_state.player1 = !game_state.player1;
     }
 }
-
 void Game::print_colored_output(const string& text, const string& color) {
     cout << '\r' << color << text << Color_RESET << endl << std::flush;
-}
-
-
-int main() {
-    // Your program code here
-    Game g = Game(false, true, 3, 0.00);
-    g.print_commands();
-    g.play();
-    return 0;
 }

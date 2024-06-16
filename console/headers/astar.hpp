@@ -2,6 +2,25 @@
 #define B2BE7B1E_B3A8_4EEE_A17B_293DCDB25035
 
 #include "game_state.hpp"
+#include <vector>
+#include <queue>
+#include <climits>
+#include <functional>
+#include <limits>
+#include <iostream>
+#include <iomanip> // Include the header for std::setw
+#include <vector>
+#include <numeric> // For accumulate
+#include <thread>
+#include <string>
+#include <ctime>
+#include <unordered_set>
+#include <cstdlib>
+#include <chrono>
+#include <thread>
+#include <utility>
+#include <algorithm>
+
 
 struct Node {
     int x, y, fScore;

@@ -7,7 +7,7 @@ COMPILER="g++"
 COMPILER_OPTIONS="-std=c++20"
 
 # List all your source files
-SOURCE_FILES="game.cpp game_state.cpp randomBot.cpp"
+SOURCE_FILES="game.cpp game_state.cpp randomBot.cpp main.cpp"
 
 # Specify the output executable name
 OUTPUT_EXECUTABLE="z_output_program"

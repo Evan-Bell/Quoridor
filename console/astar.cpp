@@ -1,30 +1,12 @@
-#include <vector>
-#include <queue>
-#include <climits>
-#include <functional>
-#include <limits>
-#include <iostream>
-#include <iomanip> // Include the header for std::setw
-#include <vector>
-#include <numeric> // For accumulate
-#include <thread>
-#include <string>
-#include <ctime>
-#include <unordered_set>
-#include <cstdlib>
-#include <chrono>
-#include <thread>
-#include <utility>
-#include <algorithm>
 
 #include "headers/astar.hpp"
 
 inline double z_asearch(GameState& game_state, const std::pair<int, int> start_pos, const int end_row, const std::pair<int, int> other_player, const bool skip_parity) {
-    
+
     if (start_pos.first == end_row) {
         return -1;
     }
-    
+
     int size = game_state.size;
     const int directions[][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}}; // Up, Down, Left, Right
 
@@ -63,7 +45,7 @@ inline double z_asearch(GameState& game_state, const std::pair<int, int> start_p
                     if (other_player == t_pos && t_pos.first != end_row && tentativeGScore%2 == skip_parity){
                         tentativeGScore = gScore[x][y];
                     }
-                    
+
                     if (tentativeGScore < gScore[newX][newY]) {
                         gScore[newX][newY] = tentativeGScore;
                         int fScore = tentativeGScore + abs(newX - end_row); // L1 norm

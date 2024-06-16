@@ -15,7 +15,19 @@
 // #include <thread>
 // #include <utility>
 // #include <algorithm>
-
+#include <iostream>
+#include <iomanip> // Include the header for std::setw
+#include <numeric> // For accumulate
+#include <thread>
+#include <map>
+#include <unordered_map>
+#include <ctime>
+#include <unordered_set>
+#include <cstdlib>
+#include <chrono>
+#include <utility>
+#include <algorithm>
+#include <random>
 
 #include "astar.hpp"
 #include "randomBot.hpp"
@@ -31,7 +43,7 @@ using std::pair;
 
 class Game {
 public:
-    
+
     string MoveKeyValues;
     string WallKeyValues;
 
