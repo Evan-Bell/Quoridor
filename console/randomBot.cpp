@@ -1,7 +1,3 @@
-#include <iostream>
-#include <vector>
-#include <random>
-
 #include "headers/randomBot.hpp"
 
 std::vector<int> randombot_action(GameState& game_state) {

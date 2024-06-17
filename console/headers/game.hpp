@@ -33,7 +33,7 @@
 #include "randomBot.hpp"
 #include "minimax.hpp"
 
-class GameState; //Forward dec
+// class GameState; //Forward dec
 
 using std::vector;
 using std::string;
@@ -53,7 +53,7 @@ public:
     bool is_user_sim;
 
     GameState game_state;
-    vector<string> player_simulation_algorithms = {"path-search", "minimax"};
+    vector<string> player_simulation_algorithms = {"randomBot", "minimax"};
     vector<string> algorithms = {"randomBot", "impatientBot", "minimax", "path-search", "online-bot"};
     vector<int> wins = {0, 0};
     vector<pair<vector<double>, vector<double>>> execution_times;
@@ -75,7 +75,7 @@ public:
 
     vector<int> pathsearch_agent();
 
-    void execute_action( vector<int> action);
+    void execute_action( vector<int>& action);
 
     bool player_simulation();
 

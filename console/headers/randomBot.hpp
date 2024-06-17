@@ -4,6 +4,9 @@
 #define RANDOMBOT_H
 
 #include "game_state.hpp"
+#include <iostream>
+#include <vector>
+#include <random>
 
 std::vector<int> randombot_action(GameState& game_state);
 

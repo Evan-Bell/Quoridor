@@ -1,43 +1,14 @@
-#include <SFML/Graphics.hpp>
-#include <vector>
-#include "headers/game.hpp"
 #include "headers/render.hpp"
 
 int main() {
-    sf::RenderWindow window(sf::VideoMode(1800, 1600), "ImGui Board Example");
+    sf::RenderWindow window(sf::VideoMode(900, 800), "Quoridor Bot Runner");
     ImGui::SFML::Init(window);
 
-    Board board;
-    ImVec2 boardPosition(50.f, 50.f);
+    Game game = Game(false, true, 1, 0.00);
 
-    while (window.isOpen()) {
-        sf::Event event;
-        while (window.pollEvent(event)) {
-            ImGui::SFML::ProcessEvent(event);
+    ImVec2 boardPosition(5.f, 5.f);
+    Board board = Board(game, window, boardPosition);
 
-            if (event.type == sf::Event::Closed)
-                window.close();
+    board.start();
 
-            if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-                sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-                board.handleMouseClick(mousePos, boardPosition);
-            }
-        }
-
-        ImGui::SFML::Update(window, sf::seconds(1.f / 60.f));
-
-        window.clear(sf::Color::White);
-
-        board.render(window, boardPosition);
-
-        ImGui::SFML::Render(window);
-
-        window.display();
-    }
-
-    ImGui::SFML::Shutdown();
-
-    return 0;
-
-    return 0;
 }

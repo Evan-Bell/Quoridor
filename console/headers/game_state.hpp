@@ -56,7 +56,7 @@ public:
 
     void reinitialize();
 
-    void copy(GameState& game_state);
+    // void copy(GameState& game_state);
 
     bool is_hor_wall(const int x, const int y);
 
@@ -76,7 +76,7 @@ public:
 
     bool is_wall_placement_valid(const pair<int,int>& pos, const bool isHorizontal);
 
-    bool is_wall_blocking_exit(const pair<int, int> pos, const int isHorizontal);
+    bool is_wall_blocking_exit(const pair<int, int>& pos, const int isHorizontal);
 
     vector<vector<int>> get_available_wall_placements();
 

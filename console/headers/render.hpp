@@ -3,22 +3,33 @@
 #include <imgui-SFML.h>
 #include <SFML/Graphics.hpp>
 #include <iostream>
+#include <SFML/System/Clock.hpp>
+#include <string> // For std::to_string
 
 // responsible for the GUI
 
+#define CELL_SIZE (400/WALLS)
 
 
-class Board{
+class Board {
 private:
-  int selectedWallType = 0; // Index of selected wall type
-  bool showGrid = true;
+  int selectedPlayer1Type = 0; // Index of selected player 1
+  int selectedPlayer2Type = 0; // Index of selected player 2
+  const char* playerTypes[3] = { "random", "alpha-beta-minimax", "simple path search"};
+  bool gameRunning = false;
 
 public:
-  GameState game_state;
+  Game game;
+  sf::RenderWindow& window;
+  ImVec2 boardPos;
 
-  Board();
+  GameState* game_state_p;
 
-  void render(sf::RenderWindow& window, ImVec2 boardPos);
+  Board(Game& game, sf::RenderWindow& window, ImVec2 boardPos);
 
-  void handleMouseClick(sf::Vector2f mousePos, ImVec2 boardPos);
+  int start();
+
+  void render();
+
+  void handleMouseClick(sf::Vector2f mousePos);
 };

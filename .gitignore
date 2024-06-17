@@ -2,5 +2,7 @@
 dnn/
 .vscode/
 build/
+*/build/
+_deps/
 .vs/
 **/z_*

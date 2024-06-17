@@ -1,4 +1,3 @@
-
 #include "headers/game.hpp"
 
 using std::cout;
@@ -224,7 +223,7 @@ vector<int> Game::pathsearch_agent(){
     return choose_random_from_actions(best_moves);
 }
 
-void Game::execute_action( vector<int> action){
+void Game::execute_action( vector<int>& action){
     if (action.size() == 2){
         game_state.move_piece(action);
     }
@@ -326,7 +325,6 @@ void Game::play() {
 
             wins[winner_ind]++;
             rounds--;
-            game_state.reinitialize();
 
             if (is_user_sim) {
                 if (winner_ind == 0) {
@@ -338,6 +336,7 @@ void Game::play() {
                 string winner = (winner_ind == 0) ? "P1" : "P2";
                 print_colored_output("The winner is " + winner + ".", Color_CYAN);
                 if (rounds != 0) {
+                    // game_state.reinitialize();
                     cout << "restarting in 3:" << std::flush;
                     std::this_thread::sleep_for(std::chrono::seconds(3));
                 }
@@ -373,6 +372,8 @@ void Game::play() {
         }
         game_state.player1 = !game_state.player1;
     }
+    game_state.print_board();
+    std::cout << &game_state << std::endl;
 }
 void Game::print_colored_output(const string& text, const string& color) {
     cout << '\r' << color << text << Color_RESET << endl << std::flush;

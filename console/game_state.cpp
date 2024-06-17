@@ -51,19 +51,20 @@ void GameState::reinitialize() {
 }
 
 
-void GameState::copy(GameState& game_state) {
-    game_state.player1 = player1;
-    game_state.size = size;
-    game_state.walls_dim = walls_dim;
-    game_state.ver_walls = ver_walls;
-    game_state.hor_walls = hor_walls;
-    game_state.walls_per_player = std::make_pair(num_walls, num_walls);
-    game_state.player1_pos = player1_pos;
-    game_state.player2_pos = player2_pos;
-    game_state.saved_wall_placements = saved_wall_placements;
-}
+// void GameState::copy(GameState& game_state) {
+//     game_state.player1 = player1;
+//     game_state.size = size;
+//     game_state.walls_dim = walls_dim;
+//     game_state.ver_walls = ver_walls;
+//     game_state.hor_walls = hor_walls;
+//     game_state.walls_per_player = std::make_pair(num_walls, num_walls);
+//     game_state.player1_pos = player1_pos;
+//     game_state.player2_pos = player2_pos;
+//     game_state.saved_wall_placements = saved_wall_placements;
+// }
 
 bool GameState::is_hor_wall(const int x, const int y){
+    if(x < 0 || x >= walls_dim || y < 0 || y >= walls_dim) return false;
     if (((hor_walls[x] >> y) & 1) == 1){
         return true;
     }
@@ -71,6 +72,7 @@ bool GameState::is_hor_wall(const int x, const int y){
 }
 
 bool GameState::is_ver_wall(const int x, const int y){
+    if(x < 0 || x >= walls_dim || y < 0 || y >= walls_dim) return false;
     if (((ver_walls[x] >> y) & 1) == 1){
         return true;
     }
@@ -234,7 +236,7 @@ bool GameState::is_wall_placement_valid(const pair<int,int>& pos, const bool isH
         return false;
     }
     else if (isHorizontal){
-        if (y > 0 && is_hor_wall(x, y-1) || (y < walls_dim - 1 && is_hor_wall(x, y+1))) {
+        if ((y > 0 && is_hor_wall(x, y-1)) || (y < walls_dim - 1 && is_hor_wall(x, y+1))) {
             return false;
         }
     }
@@ -253,7 +255,7 @@ bool GameState::is_wall_placement_valid(const pair<int,int>& pos, const bool isH
     return true;
 }
 
-bool GameState::is_wall_blocking_exit(const pair<int, int> pos, const int isHorizontal) {
+bool GameState::is_wall_blocking_exit(const pair<int, int>& pos, const int isHorizontal) {
 
     set_wall(pos.first, pos.second, isHorizontal, false);
 
