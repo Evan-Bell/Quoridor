@@ -43,13 +43,15 @@ public:
     int size;
     int num_walls;
     int walls_dim;
+    bool calculating = false;
     pair<int, int> player1_pos;
     pair<int, int> player2_pos;
     pair<int, int> walls_per_player;
     bool check_wall_blocks_exit_on_gen;
     vector<int> ver_walls; // vertical walls (ints of 1's and 0's)
     vector<int> hor_walls; //horizontal walls (ints of 1's and 0's)
-    vector<int> player_walls; // which player placed a wall (only entries which are 1 in ver_walls or hor_walls actually treated as 'holding anything')
+    vector<int> player1_walls;
+    vector<int> player2_walls;
     vector< vector<int> > saved_wall_placements;
 
     GameState();
@@ -97,6 +99,8 @@ public:
     void print_board();
 
     std::string getWallColor(int i, int j);
+
+    int whichPlayerPlacedWall(int i, int j);
 
     pair<int, int> get_cur_player_pos();
 };

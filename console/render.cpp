@@ -2,6 +2,10 @@
 #include "headers/render.hpp"
 
 
+#define WALL_THICKNESS 3.f
+#define PLAYER1_WALL_COLOR sf::Color(56, 242, 27)
+#define PLAYER2_WALL_COLOR sf::Color::Red
+#define GUI_BACKGROUND sf::Color(24, 24, 24)
 
 Board::Board(Game& game, sf::RenderWindow& window, ImVec2 boardPos) :
 game(game),
@@ -15,6 +19,7 @@ boardPos(boardPos)
 
 
 int Board::start(){
+    std::cout << "Render begin" << std::endl;
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -31,8 +36,7 @@ int Board::start(){
 
         ImGui::SFML::Update(window, sf::seconds(1.f / 60.f));
 
-        window.clear(sf::Color::White);
-
+        window.clear(GUI_BACKGROUND);
         this->render();
 
         ImGui::SFML::Render(window);
@@ -46,18 +50,38 @@ int Board::start(){
 }
 
 void Board::render() {
-    std::cout << "Render begin" << std::endl;
     // Begin ImGui window for board settings
     ImGui::Begin("Board Settings");
 
     // Dropdowns, buttons, etc.
     ImGui::Combo("Player 1 (Bottom)", &selectedPlayer1Type, playerTypes, IM_ARRAYSIZE(playerTypes));
     ImGui::Combo("Player 2 (Top)", &selectedPlayer2Type, playerTypes, IM_ARRAYSIZE(playerTypes));
-    if (ImGui::Button("Run Game")) {
-        game.play(); // Call your game's run functiond
+
+    ImGui::SliderInt("Number of Rounds", &rounds, 1, 20); // Slider for number of rounds
+    ImGui::SliderFloat("Move Delay", &moveDelay, 0.0f, 1.5f); // Slider for timer delay
+
+    ImGui::Checkbox("Show Calculation", &showCalculations);
+    ImGui::Checkbox("Print Output", &showOutput);
+
+    if (ImGui::Button("Run Rounds")) {
+
+        if (!gameRunning) {
+            gameRunning = true;
+            // Start a new thread for GUI_play
+            std::thread play_thread([&]() {
+                game.wins = {0,0};
+                game.GUI_play(playerTypes[selectedPlayer1Type], playerTypes[selectedPlayer2Type], rounds, moveDelay, showOutput);
+                // Once GUI_play completes, you can perform any follow-up actions here
+                // For example, updating UI or setting flags
+                gameRunning = false;
+            });
+
+            // Detach the thread so it runs independently
+            play_thread.detach();
+        }
     }
 
-    ImGui::End();  // End ImGui window
+    ImGui::End();  // End ImGui windowd
 
     // Draw the board
     for (int i = 0; i < SIZE; ++i) {
@@ -70,18 +94,25 @@ void Board::render() {
             // Draw cell background
             sf::RectangleShape cellShape(sf::Vector2f(size, size));
             cellShape.setPosition(posX, posY);
-            cellShape.setFillColor(sf::Color::White);
-
-            //player colorings
-            if (game_state_p->player1_pos.first == i &&  game_state_p->player1_pos.second == j) {
-                cellShape.setFillColor(sf::Color(255, 179, 162));
-            }
-            // else if (game_state_p->player2_pos == coord) {
-            //     cellShape.setFillColor(sf::Color(190, 255, 162));
-            // }
+            cellShape.setFillColor(GUI_BACKGROUND);
             cellShape.setOutlineThickness(1.f);
-            cellShape.setOutlineColor(sf::Color::Black);
+            cellShape.setOutlineColor(sf::Color(155,140,119));
             window.draw(cellShape);
+
+
+            // Draw circles for player positions
+            if (game_state_p->player1_pos.first == i && game_state_p->player1_pos.second == j) {
+                sf::CircleShape playerCircle(0.5 * size / 2.f);
+                playerCircle.setFillColor(PLAYER1_WALL_COLOR);  // Player 1 color
+                playerCircle.setPosition(posX + 0.25*size, posY + 0.25*size);
+                window.draw(playerCircle);
+            }
+            else if (game_state_p->player2_pos.first == i && game_state_p->player2_pos.second == j) {
+                sf::CircleShape playerCircle(0.5 * size / 2.f);
+                playerCircle.setFillColor(PLAYER2_WALL_COLOR);  // Player 2 color
+                playerCircle.setPosition(posX + 0.25*size, posY + 0.25*size);
+                window.draw(playerCircle);
+            }
 
         }
     }
@@ -93,19 +124,50 @@ void Board::render() {
             float posX = boardPos.x + j * CELL_SIZE;
             float posY = boardPos.y + i * CELL_SIZE;
             float size = CELL_SIZE;
+            float cut = 0.8;
 
             if(game_state_p->is_ver_wall(i, j)){
-                sf::RectangleShape vertWall(sf::Vector2f(2.f, 2*size));
-                vertWall.setPosition(posX + size - 2.f, posY + size - 2.f);
-                vertWall.setFillColor(sf::Color::Red); // Example color
-                window.draw(vertWall);
+                sf::RectangleShape vertWall(sf::Vector2f(WALL_THICKNESS, 2*size*cut));
+                vertWall.setPosition(posX + size - WALL_THICKNESS/2, posY + (1-cut)*size - WALL_THICKNESS/2);
+                int whichPlayerPlaced = game_state_p->whichPlayerPlacedWall(i, j);
+                switch (whichPlayerPlaced) {
+                    case 0:
+                        vertWall.setFillColor(sf::Color::Magenta);
+                        break;
+                    case 1:
+                        vertWall.setFillColor(PLAYER1_WALL_COLOR);
+                        break;
+                    case 2:
+                        vertWall.setFillColor(PLAYER2_WALL_COLOR);
+                        break;
+                    default:
+                        // Handle unexpected values of whichPlayerPlaced
+                        // Possibly set a default color or do nothing
+                        break;
+                }
+                if(whichPlayerPlaced || showCalculations) window.draw(vertWall);
             }
 
             if(game_state_p->is_hor_wall(i, j)){
-                sf::RectangleShape horWall(sf::Vector2f(2*size, 2.f));
-                horWall.setPosition(posX + size - 2.f, posY + size - 2.f);
-                horWall.setFillColor(sf::Color::Red); // Example color
-                window.draw(horWall);
+                sf::RectangleShape horWall(sf::Vector2f(2*size*cut, WALL_THICKNESS));
+                horWall.setPosition(posX + (1-cut)*size - WALL_THICKNESS/2, posY + size - WALL_THICKNESS/2);
+                int whichPlayerPlaced = game_state_p->whichPlayerPlacedWall(i, j);
+                switch (whichPlayerPlaced) {
+                    case 0:
+                        horWall.setFillColor(sf::Color::Magenta);
+                        break;
+                    case 1:
+                        horWall.setFillColor(PLAYER1_WALL_COLOR);
+                        break;
+                    case 2:
+                        horWall.setFillColor(PLAYER2_WALL_COLOR);
+                        break;
+                    default:
+                        // Handle unexpected values of whichPlayerPlaced
+                        // Possibly set a default color or do nothing
+                        break;
+                }
+                if (whichPlayerPlaced || showCalculations) window.draw(horWall);
             }
         }
     }
@@ -117,7 +179,7 @@ void Board::handleMouseClick(sf::Vector2f mousePos) {
     int row = static_cast<int>((mousePos.y - boardPos.y) / CELL_SIZE);
 
     // Toggle wall type at clicked position
-    if (row >= 0 && row < SIZE && col >= 0 && col < SIZE) {
-        game_state_p->set_wall(row, col, row%2, 1);
-    }
+    // if (row >= 0 && row < SIZE && col >= 0 && col < SIZE) {
+    //     game_state_p->set_wall(row, col, row%2, 1);
+    // }
 }

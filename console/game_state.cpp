@@ -41,10 +41,12 @@ void GameState::reinitialize() {
     player2_pos = std::make_pair(0, size/2);
     ver_walls.clear();
     hor_walls.clear();
-    player_walls.clear();
+    player1_walls.clear();
+    player2_walls.clear();
     ver_walls.resize(walls_dim, 0);
     hor_walls.resize(walls_dim, 0);
-    player_walls.resize(walls_dim, 0);
+    player1_walls.resize(walls_dim, 0);
+    player2_walls.resize(walls_dim, 0);
     walls_per_player = std::make_pair(num_walls, num_walls);
     saved_wall_placements.clear();
     get_available_wall_placements();
@@ -73,7 +75,6 @@ bool GameState::is_hor_wall(const int x, const int y){
 
 bool GameState::is_ver_wall(const int x, const int y){
     if(x < 0 || x >= walls_dim || y < 0 || y >= walls_dim) return false;
-    std::cout << ver_walls.size() << std::endl;
     if (((ver_walls[x] >> y) & 1) == 1){
         return true;
     }
@@ -100,11 +101,11 @@ void GameState::set_wall(const int x, const int y, const bool isHorizontal, bool
 }
 
 void GameState::set_which_player_placed_wall(const int x, const int y, const bool is_player1){
-    if (is_player1){
-        player_walls[x] &= ~(1 << y);
+    if (is_player1) {
+        player1_walls[x] |= (1 << y);
     }
-    else{
-        player_walls[x] |= (1 << y);
+    else {
+        player2_walls[x] |= (1 << y);
     }
 }
 
@@ -258,6 +259,7 @@ bool GameState::is_wall_placement_valid(const pair<int,int>& pos, const bool isH
 
 bool GameState::is_wall_blocking_exit(const pair<int, int>& pos, const int isHorizontal) {
 
+    calculating = true;
     set_wall(pos.first, pos.second, isHorizontal, false);
 
     std::pair<double, double> path_dists = aStarSearch(*this);
@@ -265,6 +267,7 @@ bool GameState::is_wall_blocking_exit(const pair<int, int>& pos, const int isHor
     // bool exit_blocked = false;
 
     clear_wall(pos.first, pos.second, isHorizontal);
+    calculating = false;
     return exit_blocked;
 }
 
@@ -535,10 +538,23 @@ void GameState::print_board() {
 }
 
 std::string GameState::getWallColor(const int i, const int j) {
-    if (((player_walls[i] >> j) & 1) == 0){
+    if (((player1_walls[i] >> j) & 1) == 1){
         return PLAYER1COLOR;
     }
-    return PLAYER2COLOR;
+    if (((player2_walls[i] >> j) & 1) == 1){
+        return PLAYER2COLOR;
+    }
+    return Color_BLACK;
+}
+
+int GameState::whichPlayerPlacedWall(const int i, const int j) {
+    if (((player1_walls[i] >> j) & 1) == 1){
+        return 1;
+    }
+    if (((player2_walls[i] >> j) & 1) == 1){
+        return 2;
+    }
+    return 0;
 }
 
 pair<int, int> GameState::get_cur_player_pos(){

@@ -54,7 +54,7 @@ public:
     bool is_user_sim;
 
     std::shared_ptr<GameState> game_state_p;
-    vector<string> player_simulation_algorithms = {"randomBot", "minimax"};
+    vector<string> player_simulation_algorithms = {"randomBot", "path-search"};
     vector<string> algorithms = {"randomBot", "impatientBot", "minimax", "path-search", "online-bot"};
     vector<int> wins = {0, 0};
     vector<pair<vector<double>, vector<double>>> execution_times;
@@ -78,9 +78,11 @@ public:
 
     void execute_action( vector<int>& action);
 
-    bool player_simulation();
+    bool player_simulation(bool printOut = true, bool recordMoves = true);
 
     void play();
+
+    void GUI_play(string player1type, string player2type, int rounds = 10, int sim_delay = 0.0, bool printOut = false, bool recordMoves = false);
 
     static void print_colored_output(const string& text, const string& color);
 };
