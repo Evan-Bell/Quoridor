@@ -82,7 +82,7 @@ public:
 
     void play();
 
-    void GUI_play(string player1type, string player2type, int rounds = 10, int sim_delay = 0.0, bool printOut = false, bool recordMoves = false);
+    void GUI_play(string player1type, string player2type, float *sim_delay, int rounds = 10, bool printOut = false, bool recordMoves = false);
 
     static void print_colored_output(const string& text, const string& color);
 };

@@ -56,7 +56,7 @@ double minimax_search(GameState& game_state, const int depth, double alpha, doub
             game_state.player1 = !game_state.player1;
             double reward = minimax_search(game_state, depth-1, alpha, beta, false);
             game_state.player1 = !game_state.player1;
-            game_state.clear_wall(x, y, isHorizontal);
+            game_state.clear_wall(x, y);
             game_state.saved_wall_placements = wall_placements; // reinstate free walls
 
             best_val = std::max(best_val, reward);
@@ -104,7 +104,7 @@ double minimax_search(GameState& game_state, const int depth, double alpha, doub
             game_state.player1 = !game_state.player1;
             double reward = minimax_search(game_state, depth-1, alpha, beta, true);
             game_state.player1 = !game_state.player1;
-            game_state.clear_wall(x, y, isHorizontal);
+            game_state.clear_wall(x, y);
             game_state.saved_wall_placements = wall_placements; // reinstate free walls
 
             best_val = std::min(best_val, reward);

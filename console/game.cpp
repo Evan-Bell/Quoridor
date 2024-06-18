@@ -159,7 +159,7 @@ vector<int> Game::minimax_agent(const int depth){
         // cout << reward << " " << wall[0] <<  " " <<  wall[1] <<  " " <<  wall[2] << endl;
 
         game_state_p->player1 = !game_state_p->player1;
-        game_state_p->clear_wall(x, y, isHorizontal);
+        game_state_p->clear_wall(x, y);
         game_state_p->saved_wall_placements = wall_placements; // reinstate free walls
 
 
@@ -211,7 +211,7 @@ vector<int> Game::pathsearch_agent(){
         game_state_p->player1 = !game_state_p->player1;
         pair<double, double> dists = aStarSearch(*game_state_p);
         game_state_p->player1 = !game_state_p->player1;
-        game_state_p->clear_wall(x, y, isHorizontal);
+        game_state_p->clear_wall(x, y);
 
         double reward = swap*((game_state_p->player1)? 4*dists.second - 3*dists.first : dists.second - dists.first);
 
@@ -383,7 +383,7 @@ void Game::play() {
     game_state_p->print_board();
 }
 
-void Game::GUI_play(string player1type, string player2type, int rounds, int sim_delay, bool printOut, bool recordMoves) {
+void Game::GUI_play(string player1type, string player2type, float *sim_delay, int rounds, bool printOut, bool recordMoves) {
     player_simulation_algorithms[0] = player1type;
     player_simulation_algorithms[1] = player2type;
     game_state_p->reinitialize();
@@ -431,7 +431,7 @@ void Game::GUI_play(string player1type, string player2type, int rounds, int sim_
                 cout << "Bot has returned something unholy" << endl;
                 exit(1);
             }
-            while (static_cast<double>(std::clock() - start_time) / CLOCKS_PER_SEC < sim_delay) {
+            while (static_cast<double>(std::clock() - start_time) / CLOCKS_PER_SEC < *sim_delay) {
                 continue;
             }
         } else {
@@ -440,7 +440,7 @@ void Game::GUI_play(string player1type, string player2type, int rounds, int sim_
                 cout << "Bot has returned something unholy" << endl;
                 exit(2);
             }
-            while (static_cast<double>(std::clock() - start_time) / CLOCKS_PER_SEC < sim_delay) {
+            while (static_cast<double>(std::clock() - start_time) / CLOCKS_PER_SEC < *sim_delay) {
                 continue;
             }
         }

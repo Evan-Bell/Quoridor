@@ -54,14 +54,15 @@ void Board::render() {
     ImGui::Begin("Board Settings");
 
     // Dropdowns, buttons, etc.
-    ImGui::Combo("Player 1 (Bottom)", &selectedPlayer1Type, playerTypes, IM_ARRAYSIZE(playerTypes));
     ImGui::Combo("Player 2 (Top)", &selectedPlayer2Type, playerTypes, IM_ARRAYSIZE(playerTypes));
+    ImGui::Combo("Player 1 (Bottom)", &selectedPlayer1Type, playerTypes, IM_ARRAYSIZE(playerTypes));
 
-    ImGui::SliderInt("Number of Rounds", &rounds, 1, 20); // Slider for number of rounds
-    ImGui::SliderFloat("Move Delay", &moveDelay, 0.0f, 1.5f); // Slider for timer delay
+    ImGui::SliderFloat("Move Delay (ms)", &moveDelay, 0.0f, 1.5f); // Slider for timer delay
 
     ImGui::Checkbox("Show Calculation", &showCalculations);
     ImGui::Checkbox("Print Output", &showOutput);
+
+    ImGui::SliderInt("Number of Rounds", &rounds, 1, 50); // Slider for number of rounds
 
     if (ImGui::Button("Run Rounds")) {
 
@@ -70,7 +71,7 @@ void Board::render() {
             // Start a new thread for GUI_play
             std::thread play_thread([&]() {
                 game.wins = {0,0};
-                game.GUI_play(playerTypes[selectedPlayer1Type], playerTypes[selectedPlayer2Type], rounds, moveDelay, showOutput);
+                game.GUI_play(playerTypes[selectedPlayer1Type], playerTypes[selectedPlayer2Type], &moveDelay, rounds, showOutput);
                 // Once GUI_play completes, you can perform any follow-up actions here
                 // For example, updating UI or setting flags
                 gameRunning = false;

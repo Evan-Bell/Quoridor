@@ -81,14 +81,14 @@ bool GameState::is_ver_wall(const int x, const int y){
     return false;
 }
 
-void GameState::set_wall(const int x, const int y, const bool isHorizontal, bool compute_new_wall_placements){
+void GameState::set_wall(const int x, const int y, const bool isHorizontal, bool computeNewWallPlacements){
     if (isHorizontal){
         hor_walls[x] |= (1 << y);
     }
     else{
         ver_walls[x] |= (1 << y);
     }
-    if (compute_new_wall_placements){
+    if (computeNewWallPlacements){
         update_available_wall_placements();
     }
 
@@ -100,8 +100,8 @@ void GameState::set_wall(const int x, const int y, const bool isHorizontal, bool
 
 }
 
-void GameState::set_which_player_placed_wall(const int x, const int y, const bool is_player1){
-    if (is_player1) {
+void GameState::set_which_player_placed_wall(const int x, const int y, const bool isPlayer1){
+    if (isPlayer1) {
         player1_walls[x] |= (1 << y);
     }
     else {
@@ -109,13 +109,9 @@ void GameState::set_which_player_placed_wall(const int x, const int y, const boo
     }
 }
 
-void GameState::clear_wall(const int x, const int y, const bool isHorizontal){
-    if (isHorizontal){
-        hor_walls[x] = hor_walls[x] & ~(1 << y);
-    }
-    else{
-        ver_walls[x] = ver_walls[x] & ~(1 << y);
-    }
+void GameState::clear_wall(const int x, const int y){
+    hor_walls[x] = hor_walls[x] & ~(1 << y);
+    ver_walls[x] = ver_walls[x] & ~(1 << y);
     if (player1) {
         walls_per_player.first++;
     } else {
@@ -266,7 +262,7 @@ bool GameState::is_wall_blocking_exit(const pair<int, int>& pos, const int isHor
     bool exit_blocked = (path_dists.first == std::numeric_limits<double>::infinity() || path_dists.second == std::numeric_limits<double>::infinity());
     // bool exit_blocked = false;
 
-    clear_wall(pos.first, pos.second, isHorizontal);
+    clear_wall(pos.first, pos.second);
     calculating = false;
     return exit_blocked;
 }
@@ -313,43 +309,6 @@ vector<vector<int>> GameState::get_available_wall_placements() {
     return wall_placements;
 }
 
-vector<vector<int>> GameState::smart_get_available_wall_placements(const int dist) {
-    vector<vector<int>> wall_placements;
-
-    if (player1) {
-        if (walls_per_player.first <= 0) {
-            return wall_placements;
-        }
-    } else if (walls_per_player.second <= 0) {
-        return wall_placements;
-    }
-
-    for (pair p: {player1_pos, player2_pos}) {
-        for (int i : {-2, -1, 0, 1}) {
-            for (int j : {-2, -1, 0, 1}) {
-                int x = p.first + i;
-                int y = p.second + j;
-                pair<int, int> tpos = std::make_pair(x,y);
-                bool isHorizontal = true;
-
-                // Check horizontals
-                if (is_wall_placement_valid(tpos, isHorizontal)) {
-                    wall_placements.push_back({x,y, isHorizontal});
-                }
-
-                isHorizontal = false;
-
-                // Check verticals
-                if (is_wall_placement_valid(tpos, isHorizontal)) {
-                    wall_placements.push_back({x,y, isHorizontal});
-                }
-            }
-        }
-    }
-
-    return wall_placements;
-}
-
 void GameState::update_available_wall_placements() {
     vector<vector<int>> new_wall_placements;
     for (vector<int> item : saved_wall_placements) {
@@ -370,13 +329,13 @@ int GameState::get_winner(){
     return (player1_pos.first == 0) ? 0 : 1;
 }
 
-void GameState::place_wall(const vector<int> inp, bool check_if_valid, bool compute_new_wall_placements) {
+void GameState::place_wall(const vector<int> inp, bool checkIfValid, bool computeNewWallPlacements) {
     int x = inp[0];
     int y = inp[1];
     pair<int, int> pos = std::make_pair(x,y);
     int isHorizontal = inp[2];
 
-    if (check_if_valid) {
+    if (checkIfValid) {
         if (!is_wall_placement_valid(pos, isHorizontal)) {
             cout << "CRAP " << x << ", " << y << ", " << isHorizontal << endl;
             exit(2);
@@ -387,7 +346,7 @@ void GameState::place_wall(const vector<int> inp, bool check_if_valid, bool comp
     set_which_player_placed_wall(x, y, player1);
 
     // Update wall placements
-    if (compute_new_wall_placements) {
+    if (computeNewWallPlacements) {
         update_available_wall_placements();
     } else {
         saved_wall_placements.clear();
@@ -547,11 +506,11 @@ std::string GameState::getWallColor(const int i, const int j) {
     return Color_BLACK;
 }
 
-int GameState::whichPlayerPlacedWall(const int i, const int j) {
-    if (((player1_walls[i] >> j) & 1) == 1){
+int GameState::whichPlayerPlacedWall(const int x, const int y) {
+    if (((player1_walls[x] >> y) & 1) == 1){
         return 1;
     }
-    if (((player2_walls[i] >> j) & 1) == 1){
+    if (((player2_walls[x] >> y) & 1) == 1){
         return 2;
     }
     return 0;
