@@ -32,6 +32,7 @@
 #include "astar.hpp"
 #include "randomBot.hpp"
 #include "minimax.hpp"
+#include <memory>  // Include the <memory> header for std::shared_ptr
 
 // class GameState; //Forward dec
 
@@ -52,7 +53,7 @@ public:
     bool verbose;
     bool is_user_sim;
 
-    GameState game_state;
+    std::shared_ptr<GameState> game_state_p;
     vector<string> player_simulation_algorithms = {"randomBot", "minimax"};
     vector<string> algorithms = {"randomBot", "impatientBot", "minimax", "path-search", "online-bot"};
     vector<int> wins = {0, 0};

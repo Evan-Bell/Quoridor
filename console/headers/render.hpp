@@ -5,6 +5,7 @@
 #include <iostream>
 #include <SFML/System/Clock.hpp>
 #include <string> // For std::to_string
+#include <memory>
 
 // responsible for the GUI
 
@@ -23,7 +24,7 @@ public:
   sf::RenderWindow& window;
   ImVec2 boardPos;
 
-  GameState* game_state_p;
+  std::shared_ptr<GameState> game_state_p;
 
   Board(Game& game, sf::RenderWindow& window, ImVec2 boardPos);
 

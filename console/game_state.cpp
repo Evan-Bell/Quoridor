@@ -73,6 +73,7 @@ bool GameState::is_hor_wall(const int x, const int y){
 
 bool GameState::is_ver_wall(const int x, const int y){
     if(x < 0 || x >= walls_dim || y < 0 || y >= walls_dim) return false;
+    std::cout << ver_walls.size() << std::endl;
     if (((ver_walls[x] >> y) & 1) == 1){
         return true;
     }
@@ -264,7 +265,6 @@ bool GameState::is_wall_blocking_exit(const pair<int, int>& pos, const int isHor
     // bool exit_blocked = false;
 
     clear_wall(pos.first, pos.second, isHorizontal);
-
     return exit_blocked;
 }
 

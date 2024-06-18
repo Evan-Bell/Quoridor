@@ -8,8 +8,8 @@ game(game),
 window(window),
 boardPos(boardPos)
 {
-    game_state_p = &game.game_state;
-    std::cout << &game.game_state << std::endl;
+    game_state_p = (game.game_state_p);
+    std::cout << "render " << (game.game_state_p) << std::endl;
     std::cout << game_state_p << std::endl;
 }
 
@@ -46,7 +46,7 @@ int Board::start(){
 }
 
 void Board::render() {
-
+    std::cout << "Render begin" << std::endl;
     // Begin ImGui window for board settings
     ImGui::Begin("Board Settings");
 
@@ -58,7 +58,6 @@ void Board::render() {
     }
 
     ImGui::End();  // End ImGui window
-
 
     // Draw the board
     for (int i = 0; i < SIZE; ++i) {
@@ -74,13 +73,12 @@ void Board::render() {
             cellShape.setFillColor(sf::Color::White);
 
             //player colorings
-            std::pair<int, int> coord = std::make_pair(i,j);
-            if (game_state_p->player1_pos == coord) {
+            if (game_state_p->player1_pos.first == i &&  game_state_p->player1_pos.second == j) {
                 cellShape.setFillColor(sf::Color(255, 179, 162));
             }
-            else if (game_state_p->player2_pos == coord) {
-                cellShape.setFillColor(sf::Color(190, 255, 162));
-            }
+            // else if (game_state_p->player2_pos == coord) {
+            //     cellShape.setFillColor(sf::Color(190, 255, 162));
+            // }
             cellShape.setOutlineThickness(1.f);
             cellShape.setOutlineColor(sf::Color::Black);
             window.draw(cellShape);

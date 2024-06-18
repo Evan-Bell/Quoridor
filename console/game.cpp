@@ -12,7 +12,8 @@ Game::Game(bool user_sim, bool verbose, int rounds, double sim_delay)
         rounds(rounds),
         sim_delay(sim_delay)
         {
-            game_state = GameState();
+            GameState temp;
+            game_state_p = std::make_shared<GameState>(temp);
             execution_times.emplace_back(vector<double>{}, vector<double>{});
             hist_per_round.emplace_back(vector<vector<int>>{}, vector<vector<int>>{});
     }
@@ -75,7 +76,7 @@ void Game::player_user(){
 }
 
 vector<int> Game::randombot_agent(){
-    return randombot_action(game_state);
+    return randombot_action(*game_state_p);
 }
 
 vector<int> choose_random_from_actions(const vector<pair<double, vector<int>>>& moves){
@@ -120,22 +121,22 @@ vector<int> Game::minimax_agent(const int depth){
     double max_val = -std::numeric_limits<double>::infinity();
     vector<pair<double, vector<int>>> best_moves;
 
-    int swap = (game_state.player1)? 1 : -1;
+    int swap = (game_state_p->player1)? 1 : -1;
 
-    game_state.check_wall_blocks_exit_on_gen = false;
+    game_state_p->check_wall_blocks_exit_on_gen = false;
 
-    vector<vector<int> > available_moves = game_state.get_available_moves();
+    vector<vector<int> > available_moves = game_state_p->get_available_moves();
     for (vector<int>& move : available_moves){
 
-        pair<int, int> temp = game_state.get_cur_player_pos();
+        pair<int, int> temp = game_state_p->get_cur_player_pos();
         vector<int> curpos = {temp.first, temp.second};
-        game_state.move_piece(move);
-        game_state.player1 = !game_state.player1;
+        game_state_p->move_piece(move);
+        game_state_p->player1 = !game_state_p->player1;
 
-        double reward = swap*minimax_search(game_state, depth-1, alpha, beta, game_state.player1);
+        double reward = swap*minimax_search(*game_state_p, depth-1, alpha, beta, game_state_p->player1);
 
-        game_state.player1 = !game_state.player1;
-        game_state.move_piece(curpos);
+        game_state_p->player1 = !game_state_p->player1;
+        game_state_p->move_piece(curpos);
 
         if (reward >= max_val){
             max_val = reward;
@@ -143,22 +144,22 @@ vector<int> Game::minimax_agent(const int depth){
         }
     }
 
-    vector<vector<int>> wall_placements = game_state.get_available_wall_placements();
+    vector<vector<int>> wall_placements = game_state_p->get_available_wall_placements();
 
     for (vector<int>& wall : wall_placements){
         int x = wall[0];
         int y = wall[1];
         bool isHorizontal = wall[2];
 
-        game_state.set_wall(x, y, isHorizontal);
-        game_state.player1 = !game_state.player1;
+        game_state_p->set_wall(x, y, isHorizontal);
+        game_state_p->player1 = !game_state_p->player1;
 
-        double reward = swap*minimax_search(game_state, depth-1, alpha, beta, game_state.player1);
+        double reward = swap*minimax_search(*game_state_p, depth-1, alpha, beta, game_state_p->player1);
         // cout << reward << " " << wall[0] <<  " " <<  wall[1] <<  " " <<  wall[2] << endl;
 
-        game_state.player1 = !game_state.player1;
-        game_state.clear_wall(x, y, isHorizontal);
-        game_state.saved_wall_placements = wall_placements; // reinstate free walls
+        game_state_p->player1 = !game_state_p->player1;
+        game_state_p->clear_wall(x, y, isHorizontal);
+        game_state_p->saved_wall_placements = wall_placements; // reinstate free walls
 
         if (reward >= max_val){
             max_val = reward;
@@ -166,7 +167,7 @@ vector<int> Game::minimax_agent(const int depth){
         }
     }
 
-    game_state.check_wall_blocks_exit_on_gen = true;
+    game_state_p->check_wall_blocks_exit_on_gen = true;
 
 
     return choose_random_from_actions(best_moves);
@@ -176,20 +177,20 @@ vector<int> Game::pathsearch_agent(){
     double max_val = -std::numeric_limits<double>::infinity();
     vector<pair<double, vector<int>>> best_moves;
 
-    int swap = (game_state.player1)? 1 : -1;
+    int swap = (game_state_p->player1)? 1 : -1;
 
-    vector<vector<int> > available_moves = game_state.get_available_moves();
+    vector<vector<int> > available_moves = game_state_p->get_available_moves();
     for (vector<int>& move : available_moves){
 
-        pair<int, int> temp = game_state.get_cur_player_pos();
+        pair<int, int> temp = game_state_p->get_cur_player_pos();
         vector<int> curpos = {temp.first, temp.second};
-        game_state.move_piece(move);
-        game_state.player1 = !game_state.player1;
+        game_state_p->move_piece(move);
+        game_state_p->player1 = !game_state_p->player1;
 
-        pair<double, double> dists = aStarSearch(game_state);
+        pair<double, double> dists = aStarSearch(*game_state_p);
 
-        game_state.player1 = !game_state.player1;
-        game_state.move_piece(curpos);
+        game_state_p->player1 = !game_state_p->player1;
+        game_state_p->move_piece(curpos);
 
         double reward = swap*(dists.second - dists.first);
 
@@ -199,19 +200,19 @@ vector<int> Game::pathsearch_agent(){
         }
     }
 
-    vector<vector<int>> wall_placements = game_state.get_available_wall_placements();
+    vector<vector<int>> wall_placements = game_state_p->get_available_wall_placements();
     for (vector<int>& wall : wall_placements){
         int x = wall[0];
         int y = wall[1];
         bool isHorizontal = wall[2];
 
-        game_state.set_wall(x, y, isHorizontal, false);
-        game_state.player1 = !game_state.player1;
-        pair<double, double> dists = aStarSearch(game_state);
-        game_state.player1 = !game_state.player1;
-        game_state.clear_wall(x, y, isHorizontal);
+        game_state_p->set_wall(x, y, isHorizontal, false);
+        game_state_p->player1 = !game_state_p->player1;
+        pair<double, double> dists = aStarSearch(*game_state_p);
+        game_state_p->player1 = !game_state_p->player1;
+        game_state_p->clear_wall(x, y, isHorizontal);
 
-        double reward = swap*((game_state.player1)? 4*dists.second - 3*dists.first : dists.second - dists.first);
+        double reward = swap*((game_state_p->player1)? 4*dists.second - 3*dists.first : dists.second - dists.first);
 
         if (dists.first != std::numeric_limits<double>::infinity() && dists.second != std::numeric_limits<double>::infinity()){
             if (reward >= max_val){
@@ -225,15 +226,15 @@ vector<int> Game::pathsearch_agent(){
 
 void Game::execute_action( vector<int>& action){
     if (action.size() == 2){
-        game_state.move_piece(action);
+        game_state_p->move_piece(action);
     }
     else{
-        game_state.place_wall(action);
+        game_state_p->place_wall(action);
     }
 }
 
 bool Game::player_simulation() {
-    int index = 1 * (!game_state.player1);
+    int index = 1 * (!game_state_p->player1);
     int player_number = index + 1;
 
     cout << "Player " << player_number << " (" << player_simulation_algorithms[index] << ") is thinking...   ";
@@ -243,7 +244,7 @@ bool Game::player_simulation() {
     std::clock_t t1 = std::clock();
 
     // if (player_simulation_algorithms[index] == "minimax-alpha-beta-pruning") {
-    //     action = minimax_agent(cop, game_state.player1);
+    //     action = minimax_agent(cop, game_state_p->player1);
     // }
     if (player_simulation_algorithms[index] == "path-search") {
         action = pathsearch_agent();
@@ -268,7 +269,7 @@ bool Game::player_simulation() {
     if (!action.empty()) {
         execute_action(action);
         std::clock_t t2 = std::clock();
-        if (game_state.player1){
+        if (game_state_p->player1){
             execution_times.back().first.push_back(static_cast<double>(t2 - t1) / CLOCKS_PER_SEC);
             hist_per_round.back().first.push_back(action);
         }
@@ -297,16 +298,16 @@ bool Game::player_simulation() {
 void Game::play() {
     while (rounds > 0) {
         std::clock_t start_time = std::clock();
-        //game_state.get_available_wall_placements();
+        game_state_p->get_available_wall_placements();
         cout << endl;
         cout << "\n";
-        game_state.print_game_stats();
+        game_state_p->print_game_stats();
         cout << "\n";
-        game_state.print_board();
+        game_state_p->print_board();
         cout << endl;
 
-        if (game_state.is_goal_state()) {
-            int winner_ind = game_state.get_winner();
+        if (game_state_p->is_goal_state()) {
+            int winner_ind = game_state_p->get_winner();
 
             vector<double> exec1 = execution_times.back().first;
             vector<double> exec2 = execution_times.back().second;
@@ -336,7 +337,7 @@ void Game::play() {
                 string winner = (winner_ind == 0) ? "P1" : "P2";
                 print_colored_output("The winner is " + winner + ".", Color_CYAN);
                 if (rounds != 0) {
-                    // game_state.reinitialize();
+                    game_state_p->reinitialize();
                     cout << "restarting in 3:" << std::flush;
                     std::this_thread::sleep_for(std::chrono::seconds(3));
                 }
@@ -347,7 +348,7 @@ void Game::play() {
             continue;
         }
 
-        if (!game_state.player1) {
+        if (!game_state_p->player1) {
             if (is_user_sim) {
                 player_user();
             } else {
@@ -370,10 +371,9 @@ void Game::play() {
                 continue;
             }
         }
-        game_state.player1 = !game_state.player1;
+        game_state_p->player1 = !game_state_p->player1;
     }
-    game_state.print_board();
-    std::cout << &game_state << std::endl;
+    game_state_p->print_board();
 }
 void Game::print_colored_output(const string& text, const string& color) {
     cout << '\r' << color << text << Color_RESET << endl << std::flush;
