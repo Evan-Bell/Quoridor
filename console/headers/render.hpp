@@ -19,11 +19,14 @@ private:
   int selectedPlayer2Type = 2; // Index of selected player 2
   const char* playerTypes[3] = { "randomBot", "minimax", "path-search"};
 
-  int rounds = 1;
+  int rounds = 1;       // Declare and initialize an integer variable
+  int *rounds_p = &rounds;
   float moveDelay = 0.0f;
   bool showCalculations = true;
   bool showOutput = false;
   bool gameRunning = false;
+  bool pauseGame = false;
+  float tempMoveDelay = 0;
 
 public:
   Game game;
@@ -39,4 +42,6 @@ public:
   void render();
 
   void handleMouseClick(sf::Vector2f mousePos);
+
+  void kill();
 };

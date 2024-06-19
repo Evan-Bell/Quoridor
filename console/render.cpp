@@ -57,30 +57,37 @@ void Board::render() {
     ImGui::Combo("Player 2 (Top)", &selectedPlayer2Type, playerTypes, IM_ARRAYSIZE(playerTypes));
     ImGui::Combo("Player 1 (Bottom)", &selectedPlayer1Type, playerTypes, IM_ARRAYSIZE(playerTypes));
 
-    ImGui::SliderFloat("Move Delay (ms)", &moveDelay, 0.0f, 1.5f); // Slider for timer delay
+    if(!pauseGame) ImGui::SliderFloat("Move Delay (ms)", &moveDelay, 0.0f, 10.0f); // Slider for timer delay
 
     ImGui::Checkbox("Show Calculation", &showCalculations);
     ImGui::Checkbox("Print Output", &showOutput);
 
-    ImGui::SliderInt("Number of Rounds", &rounds, 1, 50); // Slider for number of rounds
 
-    if (ImGui::Button("Run Rounds")) {
+
+    if(!gameRunning) ImGui::SliderInt("Number of Rounds", rounds_p, 1, 50); // Slider for number of rounds
+    else ImGui::Text("Rounds left: %d", *rounds_p);
+
+    if (!gameRunning && ImGui::Button("Run Rounds")) {
 
         if (!gameRunning) {
             gameRunning = true;
             // Start a new thread for GUI_play
             std::thread play_thread([&]() {
                 game.wins = {0,0};
-                game.GUI_play(playerTypes[selectedPlayer1Type], playerTypes[selectedPlayer2Type], &moveDelay, rounds, showOutput);
+                int temp_rounds = *rounds_p;
+                game.GUI_play(playerTypes[selectedPlayer1Type], playerTypes[selectedPlayer2Type], &moveDelay, rounds_p, showOutput);
                 // Once GUI_play completes, you can perform any follow-up actions here
                 // For example, updating UI or setting flags
                 gameRunning = false;
+                *rounds_p = temp_rounds;
             });
 
             // Detach the thread so it runs independently
             play_thread.detach();
         }
     }
+
+
 
     ImGui::End();  // End ImGui windowd
 
@@ -183,4 +190,8 @@ void Board::handleMouseClick(sf::Vector2f mousePos) {
     // if (row >= 0 && row < SIZE && col >= 0 && col < SIZE) {
     //     game_state_p->set_wall(row, col, row%2, 1);
     // }
+}
+
+void Board::kill(){
+    delete rounds_p;
 }

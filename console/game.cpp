@@ -213,7 +213,7 @@ vector<int> Game::pathsearch_agent(){
         game_state_p->player1 = !game_state_p->player1;
         game_state_p->clear_wall(x, y);
 
-        double reward = swap*((game_state_p->player1)? 4*dists.second - 3*dists.first : dists.second - dists.first);
+        double reward = swap*(dists.second - dists.first);
 
         if (dists.first != std::numeric_limits<double>::infinity() && dists.second != std::numeric_limits<double>::infinity()){
             if (reward >= max_val){
@@ -383,11 +383,11 @@ void Game::play() {
     game_state_p->print_board();
 }
 
-void Game::GUI_play(string player1type, string player2type, float *sim_delay, int rounds, bool printOut, bool recordMoves) {
+void Game::GUI_play(string player1type, string player2type, float *sim_delay, int *rounds, bool printOut, bool recordMoves) {
     player_simulation_algorithms[0] = player1type;
     player_simulation_algorithms[1] = player2type;
     game_state_p->reinitialize();
-    while (rounds > 0) {
+    while (*rounds > 0) {
         std::clock_t start_time = std::clock();
         game_state_p->get_available_wall_placements();
 
@@ -413,10 +413,10 @@ void Game::GUI_play(string player1type, string player2type, float *sim_delay, in
 
 
             wins[winner_ind]++;
-            rounds--;
+            *rounds -= 1;
 
             string winner = (winner_ind == 0) ? "P1" : "P2";
-            if (rounds != 0) {
+            if (*rounds != 0) {
                 game_state_p->reinitialize();
             }
             else{
