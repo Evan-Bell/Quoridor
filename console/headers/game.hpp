@@ -72,7 +72,7 @@ public:
 
     vector<int> randombot_agent();
 
-    vector<int> minimax_agent(const int depth = 1);
+    vector<int> minimax_agent(const int depth = 2);
 
     vector<int> pathsearch_agent();
 
@@ -82,7 +82,7 @@ public:
 
     void play();
 
-    void GUI_play(string player1type, string player2type, float *sim_delay, int *rounds, bool printOut = false, bool recordMoves = false);
+    void GUI_play(string player1type, string player2type, float *sim_delay, int *rounds, bool *printOut, bool *recordMoves);
 
     static void print_colored_output(const string& text, const string& color);
 };
