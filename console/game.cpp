@@ -121,55 +121,59 @@ vector<int> Game::minimax_agent(const int depth){
     double max_val = -std::numeric_limits<double>::infinity();
     vector<pair<double, vector<int>>> best_moves;
 
-    int swap = (game_state_p->player1)? 1 : -1;
+    GameState gp = game_state_p->copy();
 
-    game_state_p->check_wall_blocks_exit_on_gen = false;
+    int swap = (gp.player1) ? 1 : -1;
 
-    vector<vector<int> > available_moves = game_state_p->get_available_moves();
-    for (vector<int>& move : available_moves){
+    gp.check_wall_blocks_exit_on_gen = false;
 
-        pair<int, int> temp = game_state_p->get_cur_player_pos();
+    vector<vector<int>> available_moves = gp.get_available_moves();
+    for (vector<int> &move : available_moves)
+    {
+
+        pair<int, int> temp = gp.get_cur_player_pos();
         vector<int> curpos = {temp.first, temp.second};
-        game_state_p->move_piece(move);
-        game_state_p->player1 = !game_state_p->player1;
+        gp.move_piece(move);
+        gp.player1 = !gp.player1;
 
-        double reward = swap*minimax_search(*game_state_p, depth-1, alpha, beta, game_state_p->player1);
+        double reward = swap * minimax_search(gp, depth - 1, alpha, beta, gp.player1);
 
-        game_state_p->player1 = !game_state_p->player1;
-        game_state_p->move_piece(curpos);
+        gp.player1 = !gp.player1;
+        gp.move_piece(curpos);
 
-        if (reward >= max_val){
+        if (reward >= max_val)
+        {
             max_val = reward;
             best_moves.push_back(std::make_pair(reward, move));
         }
     }
 
-    vector<vector<int>> wall_placements = game_state_p->get_available_wall_placements();
+    vector<vector<int>> wall_placements = gp.get_available_wall_placements();
 
-    for (vector<int>& wall : wall_placements){
+    for (vector<int> &wall : wall_placements)
+    {
         int x = wall[0];
         int y = wall[1];
         bool isHorizontal = wall[2];
 
+        gp.set_wall(x, y, isHorizontal);
+        gp.player1 = !gp.player1;
 
-        game_state_p->set_wall(x, y, isHorizontal);
-        game_state_p->player1 = !game_state_p->player1;
-
-        double reward = swap*minimax_search(*game_state_p, depth-1, alpha, beta, game_state_p->player1);
+        double reward = swap * minimax_search(gp, depth - 1, alpha, beta, gp.player1);
         // cout << reward << " " << wall[0] <<  " " <<  wall[1] <<  " " <<  wall[2] << endl;
 
-        game_state_p->player1 = !game_state_p->player1;
-        game_state_p->clear_wall(x, y);
-        game_state_p->saved_wall_placements = wall_placements; // reinstate free walls
+        gp.player1 = !gp.player1;
+        gp.clear_wall(x, y);
+        gp.saved_wall_placements = wall_placements; // reinstate free walls
 
-
-        if (reward >= max_val){
+        if (reward >= max_val)
+        {
             max_val = reward;
             best_moves.push_back(std::make_pair(reward, wall));
         }
     }
 
-    game_state_p->check_wall_blocks_exit_on_gen = true;
+    gp.check_wall_blocks_exit_on_gen = true;
 
     return choose_random_from_actions(best_moves);
 }
@@ -178,20 +182,23 @@ vector<int> Game::pathsearch_agent(){
     double max_val = -std::numeric_limits<double>::infinity();
     vector<pair<double, vector<int>>> best_moves;
 
-    int swap = (game_state_p->player1)? 1 : -1;
+    GameState gp = game_state_p->copy();
 
-    vector<vector<int> > available_moves = game_state_p->get_available_moves();
+    int swap = (gp.player1)? 1 : -1;
+
+
+    vector<vector<int> > available_moves = gp.get_available_moves();
     for (vector<int>& move : available_moves){
 
-        pair<int, int> temp = game_state_p->get_cur_player_pos();
+        pair<int, int> temp = gp.get_cur_player_pos();
         vector<int> curpos = {temp.first, temp.second};
-        game_state_p->move_piece(move);
-        game_state_p->player1 = !game_state_p->player1;
+        gp.move_piece(move);
+        gp.player1 = !gp.player1;
 
-        pair<double, double> dists = aStarSearch(*game_state_p);
+        pair<double, double> dists = aStarSearch(gp);
 
-        game_state_p->player1 = !game_state_p->player1;
-        game_state_p->move_piece(curpos);
+        gp.player1 = !gp.player1;
+        gp.move_piece(curpos);
 
         double reward = swap*(dists.second - dists.first);
 
@@ -201,17 +208,17 @@ vector<int> Game::pathsearch_agent(){
         }
     }
 
-    vector<vector<int>> wall_placements = game_state_p->get_available_wall_placements();
+    vector<vector<int>> wall_placements = gp.get_available_wall_placements();
     for (vector<int>& wall : wall_placements){
         int x = wall[0];
         int y = wall[1];
         bool isHorizontal = wall[2];
 
-        game_state_p->set_wall(x, y, isHorizontal, false);
-        game_state_p->player1 = !game_state_p->player1;
-        pair<double, double> dists = aStarSearch(*game_state_p);
-        game_state_p->player1 = !game_state_p->player1;
-        game_state_p->clear_wall(x, y);
+        gp.set_wall(x, y, isHorizontal, false);
+        gp.player1 = !gp.player1;
+        pair<double, double> dists = aStarSearch(gp);
+        gp.player1 = !gp.player1;
+        gp.clear_wall(x, y);
 
         double reward = swap*(dists.second - dists.first);
 
@@ -238,8 +245,6 @@ bool Game::player_simulation(bool printGame, bool recordMoves) {
     int index = 1 * (!game_state_p->player1);
     int player_number = index + 1;
 
-    if (printGame) cout << "Player " << player_number << " (" << player_simulation_algorithms[index] << ") is thinking...   ";
-
     vector<int> action;
 
     std::clock_t t1 = std::clock();
@@ -254,7 +259,7 @@ bool Game::player_simulation(bool printGame, bool recordMoves) {
         action = randombot_agent();
     }
     else if (player_simulation_algorithms[index] == "minimax") {
-        action = minimax_agent(2);
+        action = minimax_agent();
     }
     // else if (player_simulation_algorithms[index] == "online-bot") {
     //     while (online_move == std::make_pair(0, 0)) {
@@ -290,7 +295,7 @@ bool Game::player_simulation(bool printGame, bool recordMoves) {
                 string loc = "(" + string(1, static_cast<char>('a' + action[0])) + ", " + string(1, static_cast<char>('a' + action[1])) + ")";
                 cout << "\r Player " << player_number << " (" << player_simulation_algorithms[index] << ") has placed a " << orientation << " wall at " << loc << "." << std::endl;
             }
-            cout << "This took " << static_cast<double>(t2 - t1) / CLOCKS_PER_SEC << " seconds." << std::flush;
+            cout << "This took " << static_cast<double>(t2 - t1) / CLOCKS_PER_SEC << " seconds." << std::endl;
         }
 
         return true;
@@ -383,7 +388,7 @@ void Game::play() {
     game_state_p->print_board();
 }
 
-void Game::GUI_play(string player1type, string player2type, float *sim_delay, int *rounds, bool printOut, bool recordMoves) {
+void Game::GUI_play(string player1type, string player2type, float *sim_delay, int *rounds, bool *printOut, bool *recordMoves) {
     player_simulation_algorithms[0] = player1type;
     player_simulation_algorithms[1] = player2type;
     game_state_p->reinitialize();
@@ -394,7 +399,7 @@ void Game::GUI_play(string player1type, string player2type, float *sim_delay, in
         if (game_state_p->is_goal_state()) {
             int winner_ind = game_state_p->get_winner();
 
-            if(recordMoves) {
+            if(*recordMoves) {
                 vector<double> exec1 = execution_times.back().first;
                 vector<double> exec2 = execution_times.back().second;
 
@@ -426,7 +431,7 @@ void Game::GUI_play(string player1type, string player2type, float *sim_delay, in
         }
 
         if (!game_state_p->player1) {
-            bool res = player_simulation(printOut, recordMoves);
+            bool res = player_simulation(*printOut, *recordMoves);
             if (!res) {
                 cout << "Bot has returned something unholy" << endl;
                 exit(1);
@@ -435,7 +440,7 @@ void Game::GUI_play(string player1type, string player2type, float *sim_delay, in
                 continue;
             }
         } else {
-            bool res = player_simulation(printOut, recordMoves);
+            bool res = player_simulation(*printOut, *recordMoves);
             if (!res) {
                 cout << "Bot has returned something unholy" << endl;
                 exit(2);
