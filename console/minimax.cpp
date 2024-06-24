@@ -2,7 +2,7 @@
 
 
 double minimax_search(GameState& game_state, const int depth, double alpha, double beta, const bool is_max){
-    if (game_state.is_goal_state() || depth == 0){
+    if (game_state.is_goal_state() || depth <= 0){
         pair<double, double> dists = aStarSearch(game_state);
 
         if (dists.first == std::numeric_limits<double>::infinity() || dists.second == std::numeric_limits<double>::infinity()){
