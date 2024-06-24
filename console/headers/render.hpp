@@ -24,6 +24,7 @@ private:
   float moveDelay = 0.0f;
   bool showCalculations = true;
   bool showOutput = false;
+  bool printAverages = false;
   bool gameRunning = false;
   bool pauseGame = false;
   float tempMoveDelay = 0;

@@ -61,11 +61,11 @@ void Board::render() {
 
     ImGui::Checkbox("Show Calculation", &showCalculations);
     ImGui::Checkbox("Print Output", &showOutput);
+    ImGui::Checkbox("Print Average round move times", &printAverages);
 
 
 
-    if(!gameRunning) ImGui::SliderInt("Number of Rounds", rounds_p, 1, 50); // Slider for number of rounds
-    else ImGui::Text("Rounds left: %d", *rounds_p);
+    if(!gameRunning) ImGui::SliderInt("Number of Rounds", rounds_p, 1, 100); // Slider for number of rounds
 
     if (!gameRunning && ImGui::Button("Run Rounds")) {
 
@@ -75,7 +75,7 @@ void Board::render() {
             std::thread play_thread([&]() {
                 game.wins = {0,0};
                 int temp_rounds = *rounds_p;
-                game.GUI_play(playerTypes[selectedPlayer1Type], playerTypes[selectedPlayer2Type], &moveDelay, rounds_p, showOutput);
+                game.GUI_play(playerTypes[selectedPlayer1Type], playerTypes[selectedPlayer2Type], &moveDelay, rounds_p, &showOutput, &printAverages);
                 // Once GUI_play completes, you can perform any follow-up actions here
                 // For example, updating UI or setting flags
                 gameRunning = false;
@@ -87,9 +87,22 @@ void Board::render() {
         }
     }
 
+    if (gameRunning && ImGui::Button("Cancel Run")) {
+        *rounds_p = 0;
+    }
 
+    ImGui::End();  // End ImGui window
 
-    ImGui::End();  // End ImGui windowd
+    ImGui::Begin("Current/Last Game Info");
+    if (gameRunning) {
+        ImGui::Text("Rounds left: %d", *rounds_p);
+        ImGui::Text("Player 2 Walls Left: %d", game_state_p->walls_per_player.second);
+        ImGui::Text("Player 1 Walls Left: %d", game_state_p->walls_per_player.first);
+    }
+    else {
+        ImGui::Text("Previous Score: %d - %d", game.wins[0], game.wins[1]);
+    }
+    ImGui::End();  // End ImGui window
 
     // Draw the board
     for (int i = 0; i < SIZE; ++i) {
