@@ -53,12 +53,13 @@ public:
     vector<int> player1_walls;
     vector<int> player2_walls;
     vector< vector<int> > saved_wall_placements;
+    vector< vector<int> > starting_available_wall_placements;
 
     GameState();
 
     void reinitialize();
 
-    // void copy(GameState& game_state);
+    GameState copy();
 
     /**
      * Checks if a horizontal wall is present at (x,y) where (0,0) is the bottom right intersection of the top left square
@@ -157,7 +158,7 @@ public:
 
     /**
      * Gets which player won
-     * @returns 1 if player1 ---- OR ---- 0 if player2
+     * @returns 0 if player1 ---- OR ---- 1 if player2
      */
     int get_winner();
 

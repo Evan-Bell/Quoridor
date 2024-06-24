@@ -48,22 +48,89 @@ void GameState::reinitialize() {
     player1_walls.resize(walls_dim, 0);
     player2_walls.resize(walls_dim, 0);
     walls_per_player = std::make_pair(num_walls, num_walls);
-    saved_wall_placements.clear();
-    get_available_wall_placements();
+
+    if(starting_available_wall_placements.size() > 0){
+        vector<vector<int>> temp;
+        for(auto& v : starting_available_wall_placements){
+            vector<int> elem;
+            for(int i : v) elem.push_back(i);
+            temp.push_back(elem);
+        }
+        saved_wall_placements = temp;
+    }
+    else{
+        get_available_wall_placements();
+        vector<vector<int>> temp;
+        for(auto& v : saved_wall_placements){
+            vector<int> elem;
+            for(int i : v) elem.push_back(i);
+            temp.push_back(elem);
+        }
+        starting_available_wall_placements = temp;
+    }
+
 }
 
 
-// void GameState::copy(GameState& game_state) {
-//     game_state.player1 = player1;
-//     game_state.size = size;
-//     game_state.walls_dim = walls_dim;
-//     game_state.ver_walls = ver_walls;
-//     game_state.hor_walls = hor_walls;
-//     game_state.walls_per_player = std::make_pair(num_walls, num_walls);
-//     game_state.player1_pos = player1_pos;
-//     game_state.player2_pos = player2_pos;
-//     game_state.saved_wall_placements = saved_wall_placements;
-// }
+GameState GameState::copy() {
+    GameState copy_game_state = GameState();
+    (&copy_game_state)->player1 = this->player1;
+
+    (&copy_game_state)->size = this->size;
+    (&copy_game_state)->walls_dim = this->walls_dim;
+
+    vector<int> temp_walls;
+    for(int v : this->ver_walls) temp_walls.push_back(v);
+    (&copy_game_state)->ver_walls = temp_walls;
+
+    vector<int> temp_walls_hor;
+    for(int v : this->hor_walls) temp_walls_hor.push_back(v);
+    (&copy_game_state)->hor_walls = temp_walls_hor;
+
+    vector<int> p1w;
+    for(int v : this->player1_walls) p1w.push_back(v);
+    (&copy_game_state)->player1_walls = p1w;
+
+    vector<int> p2w;
+    for(int v : this->player2_walls) p2w.push_back(v);
+    (&copy_game_state)->player2_walls = p2w;
+
+    (&copy_game_state)->calculating = this->calculating;
+    (&copy_game_state)->check_wall_blocks_exit_on_gen = this->check_wall_blocks_exit_on_gen;
+
+    (&copy_game_state)->player1_pos = std::make_pair(this->player1_pos.first, this->player1_pos.second);
+    (&copy_game_state)->player2_pos = std::make_pair(this->player2_pos.first, this->player2_pos.second);
+    (&copy_game_state)->walls_per_player = std::make_pair(this->walls_per_player.first, this->walls_per_player.second);
+
+    vector<vector<int>> temp;
+    for(vector<int> v : this->saved_wall_placements){
+        vector<int> move;
+        for(int e: v){
+            move.push_back(e);
+        }
+        temp.push_back(move);
+    }
+    (&copy_game_state)->saved_wall_placements = temp;
+
+    return copy_game_state;
+
+    /*
+    bool player1;
+    int size;
+    int num_walls;
+    int walls_dim;
+    bool calculating = false;
+    pair<int, int> player1_pos;
+    pair<int, int> player2_pos;
+    pair<int, int> walls_per_player;
+    bool check_wall_blocks_exit_on_gen;
+    vector<int> ver_walls; // vertical walls (ints of 1's and 0's)
+    vector<int> hor_walls; //horizontal walls (ints of 1's and 0's)
+    vector<int> player1_walls;
+    vector<int> player2_walls;
+    vector< vector<int> > saved_wall_placements;
+    */
+}
 
 bool GameState::is_hor_wall(const int x, const int y){
     if(x < 0 || x >= walls_dim || y < 0 || y >= walls_dim) return false;
