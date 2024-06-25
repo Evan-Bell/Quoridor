@@ -53,12 +53,14 @@ public:
     bool verbose;
     bool is_user_sim;
 
+
     std::shared_ptr<GameState> game_state_p;
     vector<string> player_simulation_algorithms = {"randomBot", "path-search"};
     vector<string> algorithms = {"randomBot", "impatientBot", "minimax", "path-search", "online-bot"};
     vector<int> wins = {0, 0};
     vector<pair<vector<double>, vector<double>>> execution_times;
     vector< pair< vector< vector<int> >, vector< vector<int> > > > hist_per_round;
+    string logString;
 
     Game(bool user_sim, bool verbose, int rounds, double sim_delay = 0.5);
 
@@ -78,9 +80,7 @@ public:
 
     void execute_action( vector<int>& action);
 
-    bool player_simulation(bool printOut = true, bool recordMoves = true);
-
-    void play();
+    vector<int> player_simulation(bool printOut = true, bool recordMoves = true);
 
     void GUI_play(string player1type, string player2type, float *sim_delay, int *rounds, bool *printOut, bool *recordMoves);
 
