@@ -53,9 +53,6 @@ void Board::render() {
     // Begin ImGui window for board settings
     ImGui::Begin("Board Settings");
 
-    // Dropdowns, buttons, etc.
-    ImGui::Combo("Player 2 (Top)", &selectedPlayer2Type, playerTypes, IM_ARRAYSIZE(playerTypes));
-    ImGui::Combo("Player 1 (Bottom)", &selectedPlayer1Type, playerTypes, IM_ARRAYSIZE(playerTypes));
 
     if(!pauseGame) ImGui::SliderFloat("Move Delay (ms)", &moveDelay, 0.0f, 10.0f); // Slider for timer delay
 
@@ -65,7 +62,12 @@ void Board::render() {
 
 
 
-    if(!gameRunning) ImGui::SliderInt("Number of Rounds", rounds_p, 1, 100); // Slider for number of rounds
+    if(!gameRunning) {
+        // Dropdowns, buttons, etc.
+        ImGui::Combo("Player 2 (Top)", &selectedPlayer2Type, playerTypes, IM_ARRAYSIZE(playerTypes));
+        ImGui::Combo("Player 1 (Bottom)", &selectedPlayer1Type, playerTypes, IM_ARRAYSIZE(playerTypes));
+        ImGui::SliderInt("Number of Rounds", rounds_p, 1, 1000); // Slider for number of rounds
+    }
 
     if (!gameRunning && ImGui::Button("Run Rounds")) {
 
@@ -100,8 +102,12 @@ void Board::render() {
         ImGui::Text("Player 1 Walls Left: %d", game_state_p->walls_per_player.first);
     }
     else {
+
         ImGui::Text("Previous Score: %d - %d", game.wins[0], game.wins[1]);
     }
+    ImGui::Text("--------------");
+    ImGui::Text("Player 2 (Top)    : %s", playerTypes[selectedPlayer2Type]);
+    ImGui::Text("Player 1 (Bottom) : %s", playerTypes[selectedPlayer1Type]);
     ImGui::End();  // End ImGui window
 
     // Draw the board

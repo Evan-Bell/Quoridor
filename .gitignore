@@ -3,6 +3,7 @@ dnn/
 .vscode/
 build/
 */build/
+saved_games/
 _deps/
 .vs/
 **/z_*
