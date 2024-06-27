@@ -59,6 +59,7 @@ void Board::render() {
     ImGui::Checkbox("Show Calculation", &showCalculations);
     ImGui::Checkbox("Print Output", &showOutput);
     ImGui::Checkbox("Print Average round move times", &printAverages);
+    ImGui::Checkbox("Save the game log", &logGame);
 
 
 
@@ -77,7 +78,7 @@ void Board::render() {
             std::thread play_thread([&]() {
                 game.wins = {0,0};
                 int temp_rounds = *rounds_p;
-                game.GUI_play(playerTypes[selectedPlayer1Type], playerTypes[selectedPlayer2Type], &moveDelay, rounds_p, &showOutput, &printAverages);
+                game.GUI_play(playerTypes[selectedPlayer1Type], playerTypes[selectedPlayer2Type], &moveDelay, rounds_p, &showOutput, &printAverages, &logGame);
                 // Once GUI_play completes, you can perform any follow-up actions here
                 // For example, updating UI or setting flags
                 gameRunning = false;

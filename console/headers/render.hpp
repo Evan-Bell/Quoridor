@@ -27,6 +27,7 @@ private:
   bool printAverages = false;
   bool gameRunning = false;
   bool pauseGame = false;
+  bool logGame = true;
   float tempMoveDelay = 0;
 
 public:

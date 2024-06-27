@@ -82,7 +82,7 @@ public:
 
     vector<int> player_simulation(bool printOut = true, bool recordMoves = true);
 
-    void GUI_play(string player1type, string player2type, float *sim_delay, int *rounds, bool *printOut, bool *recordMoves);
+    void GUI_play(string player1type, string player2type, float *sim_delay, int *rounds, bool *printOut, bool *recordMoves, bool *saveGameLog);
 
     static void print_colored_output(const string& text, const string& color);
 };

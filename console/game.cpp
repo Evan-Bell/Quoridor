@@ -300,7 +300,7 @@ vector<int> Game::player_simulation(bool printGame, bool recordMoves) {
             }
             cout << "This took " << static_cast<double>(t2 - t1) / CLOCKS_PER_SEC << " seconds." << std::endl;
         }
-        logString += vectorToString(action) + "," + std::to_string(static_cast<double>(t2 - t1) / CLOCKS_PER_SEC) + "\n";
+        logString += vectorToString(action) + " " + std::to_string(static_cast<double>(t2 - t1) / CLOCKS_PER_SEC) + "\n";
         return action;
     }
     else {
@@ -308,7 +308,7 @@ vector<int> Game::player_simulation(bool printGame, bool recordMoves) {
     }
 }
 
-void Game::GUI_play(string player1type, string player2type, float *sim_delay, int *rounds, bool *printOut, bool *recordMoves) {
+void Game::GUI_play(string player1type, string player2type, float *sim_delay, int *rounds, bool *printOut, bool *recordMoves, bool *saveGameLog) {
     player_simulation_algorithms[0] = player1type;
     player_simulation_algorithms[1] = player2type;
     game_state_p->reinitialize();
@@ -345,7 +345,7 @@ void Game::GUI_play(string player1type, string player2type, float *sim_delay, in
             string winner = (winner_ind == 0) ? "P1" : "P2";
             wins[winner_ind]++;
             logString += "Won " + winner;
-            logGame(currentTime, player1type, player2type, logString, *rounds);
+            if(*saveGameLog) logGame(currentTime, player1type, player2type, logString, *rounds);
 
             *rounds -= 1;
 
