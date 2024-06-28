@@ -315,6 +315,7 @@ void Game::GUI_play(string player1type, string player2type, float *sim_delay, in
     string currentTime = getCurrentDate();
     logString = "";
     logString += "size " + std::to_string(SIZE) + "\n";
+    logString += "Walls " + std::to_string(WALLS) + "\n";
     logString += "round " + std::to_string(*rounds) + "\n";
     logString += "player1 " + player1type + "\n";
     logString += "player2 " + player2type + "\n";
@@ -351,6 +352,7 @@ void Game::GUI_play(string player1type, string player2type, float *sim_delay, in
 
             logString = "";
             logString += "size " + std::to_string(SIZE) + "\n";
+            logString += "Walls " + std::to_string(WALLS) + "\n";
             logString += "round " + std::to_string(*rounds) + "\n";
             logString += "player1 " + player1type + "\n";
             logString += "player2 " + player2type + "\n";
