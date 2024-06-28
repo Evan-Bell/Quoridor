@@ -3,8 +3,7 @@ mutable struct Game
     board_size::Int
     horizontal_placement::Array{Bool, 2}
     vertical_placement::Array{Bool, 2}
-    player1_pos::Tuple{Int, Int}
-    player2_pos::Tuple{Int, Int}
+    player_pos::Array{Int, 2}
     p1_walls_left::Int;
     p2_walls_left::Int;
     game_over::Bool
@@ -28,8 +27,9 @@ function Game(file_path::String)
     #set vars
     horizontal_placement = falses(board_size, board_size)
     vertical_placement = falses(board_size, board_size)
-    player1_pos = (0, div(board_size, 2))
-    player2_pos = (board_size-1, div(board_size, 2))
+    player_pos = zeros(Int, board_size, board_size)
+    player_pos[1, div(board_size, 2) + 1] = 1
+    player_pos[end, div(board_size, 2) + 1] = -1
 
 
     winner_info = split(lines[end], " ")
@@ -38,7 +38,7 @@ function Game(file_path::String)
     game_over = false;
     line_counter = 6;
 
-    return Game(file_path, board_size, horizontal_placement, vertical_placement, player1_pos, player2_pos, p1_walls_left, p2_walls_left, game_over, p1_won, lines, line_counter)
+    return Game(file_path, board_size, horizontal_placement, vertical_placement, player_pos, p1_walls_left, p2_walls_left, game_over, p1_won, lines, line_counter)
 end
 
 function parse_move(move_str)
@@ -55,11 +55,11 @@ function plural_next_moves!(g::Game, iters::Int)
 end
 
 
-function next_move!(game::Game)
-    line = game.lines[game.line_counter]
+function next_move!(g::Game)
+    line = g.lines[g.line_counter]
 
     if startswith(line, "Won")
-        game.game_over = true;
+        g.game_over = true;
         return
     end
 
@@ -72,25 +72,29 @@ function next_move!(game::Game)
 
     # Categorize the move
     if length(move) == 2
-        if game.line_counter % 2 == 0
-            game.player1_pos = (move[1] + 1, move[2] + 1)
+        if g.line_counter % 2 == 0
+            # Unset the other value of 1 in the matrix
+            g.player_pos[g.player_pos .== 1] .= 0
+            g.player_pos[move[1] + 1, move[2] + 1] = 1
         else
-            game.player2_pos = (move[1] + 1, move[2] + 1)
+            # Unset the other value of -1 in the matrix
+            g.player_pos[g.player_pos .== -1] .= 0
+            g.player_pos[move[1] + 1, move[2] + 1] = -1
         end
     elseif length(move) == 3
         x, y, placement_type = move
         if placement_type == 0
-            game.horizontal_placement[x+1, y+1] = true
+            g.horizontal_placement[x+1, y+1] = true
         elseif placement_type == 1
-            game.vertical_placement[x+1, y+1] = true
+            g.vertical_placement[x+1, y+1] = true
         end
 
         # decrement walls left
-        if game.line_counter % 2 == 0
-            game.p1_walls_left -= 1
+        if g.line_counter % 2 == 0
+            g.p1_walls_left -= 1
         else
-            game.p2_walls_left -= 1
+            g.p2_walls_left -= 1
         end
     end
-    game.line_counter += 1;
+    g.line_counter += 1;
 end
