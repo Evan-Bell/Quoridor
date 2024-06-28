@@ -1,102 +1,152 @@
 include("createRep.jl")
 include("translateMove.jl")
+include("helper.jl")
 
+
+train_folder = "saved_games/2024-06-24_(20:46)_(path-search | path-search)"
+test_folder = "saved_games/2024-06-27_(21:01)_(path-search | path-search)"
 
 # # # Specify the file path
 # file_path = "../saved_games/2024-06-24_(20:31)_(randomBot | path-search)/round_1.txt"
 
-# # # Parse and categorize the input file
-# g = Game(file_path)
+using Flux
+using Flux: params
+using Random
 
-# # Print the results
-# println("\nBoard Size:")
-# println(g.board_size)
+using StatsBase
+using Statistics
 
-# while (g.game_over == false)
+# Define the function to create the input data
+function create_input_data(g::Game)
 
-#     println("\nHorizontal Placements Matrix:")
-#     println(g.horizontal_placement)
-#     println("\nVertical Placements Matrix:")
-#     println(g.vertical_placement)
-#     println("\nPlayer 1 Position:")
-#     println(g.player1_pos)
-#     println("\nPlayer 2 Position:")
-#     println(g.player2_pos)
-#     println("\nPlayer 1 Won:")
-#     println(g.p1_won)
+    return g.horizontal_placement, g.vertical_placement, g.player1_pos, g.player2_pos, g.p1_walls_left, g.p2_walls_left, g.p1_won
+end
 
-#     next_move!(g);
-# end
+# Function to prepare the data for the model
+function prepare_data(vec1::Array{Bool, 2}, vec2::Array{Bool, 2}, tuple1::Tuple{Int, Int}, tuple2::Tuple{Int, Int}, int1::Int, int2::Int)
+    vec1_flat = vec1[:]
+    vec2_flat = vec2[:]
+    input_data = vcat(vec1_flat, vec2_flat, [tuple1..., tuple2...], [int1, int2])
+    return input_data
+end
 
-# using Flux
-# using Flux: onecold, onehotbatch, throttle, params
-# import Pkg; Pkg.add("CUDA")
-# import Pkg; Pkg.add("MLDatasets")
-# import Pkg; Pkg.add("cuDNN")
-# using MLDatasets  # You can use this package to load datasets easily
-# using CUDA
+# Generate synthetic data for training
+function generate_synthetic_data(num_samples, rounds)
+    X = []
+    y = []
+
+    samples_taken = 0
+
+    println("Collecting $(num_samples) samples")
+
+    while samples_taken < num_samples
+
+        progress_bar(samples_taken, num_samples)
+
+        r = rand(1:rounds)
+        file_path = "../$(train_folder)/round_$(r).txt"
+        g = Game(file_path)
+        while !g.game_over
+            randomNum = rand(0:div(length(g.lines),5))
+            plural_next_moves!(g, randomNum)
+            vec1, vec2, tuple1, tuple2, int1, int2, OUTPUT = create_input_data(g)
+            input_data = prepare_data(vec1, vec2, tuple1, tuple2, int1, int2)
+            push!(X, input_data)
+            push!(y, OUTPUT)
+            samples_taken += 1
+        end
+    end
+
+    # Convert lists to matrices
+    X = reduce(hcat, X)'
+    X = Float32.(X)  # Concatenate vectors horizontally and transpose to get (num_samples, num_features)
+    y = Float32.(y)       # Ensure y is a Float32 array for Flux compatibility
+    y = reshape(y, 1, :)  # Reshape y to match the expected shape (column vector)
+    X = reshape(X, size(X)[2], :)
+
+    # Print dimensions for debugging
+    println("X dims: ", size(X))
+    println("y dims: ", size(y))
+
+    return Flux.Data.DataLoader((X,y), batchsize=32, shuffle=true)
+end
+
+# Create the model
+model = Chain(
+    Dense(168, 64, relu),
+    Dense(64, 32, relu),
+    Dense(32, 1),
+    x -> σ.(x) .> 0.5
+)
+
+# Loss function
+loss_fn(x, y) = Flux.binarycrossentropy(model(x), y)
+
+# Training function
+function train_model(data_loader, epochs)
+    optimizer = ADAM()
+    for epoch in 1:epochs
+        for batch in data_loader
+            x,y = batch
+            Flux.train!(loss_fn, params(model), [(x, y)], optimizer)
+        end
+        println("Epoch $epoch complete")
+    end
+end
+
+# Generate synthetic data
+data_loader = generate_synthetic_data(3000, 1000)
+
+# Train the model
+train_model(data_loader, 10000)
 
 
-# # Represent the game board as a 4xNxN, one NxN of horwalls, one NxN of ver walls,
+function runtest(test_rounds::Int)
+    correct = 0
+    falsepos = 0
+    falseneg = 0
+    total = 0
+
+    while total < test_rounds
+
+        randInt = rand(1:1000)
+        # Test the model with new data
+        file_path = "../$(test_folder)/round_$(randInt).txt"
+        g = Game(file_path)
+        vec1, vec2, tuple1, tuple2, int1, int2, OUTPUT = create_input_data(g)
+        input_data = prepare_data(vec1, vec2, tuple1, tuple2, int1, int2)
+        prediction = model(input_data)
 
 
-# # Define the CNN architecture
-# function create_cnn()
-#     return Chain(
-#         Conv((3, 3), 1=>32, relu),
-#         MaxPool((2, 2)),
-#         Conv((3, 3), 32=>64, relu),
-#         MaxPool((2, 2)),
-#         x -> reshape(x, :, size(x, 4)),
-#         Dense(7*7*64, 128, relu),
-#         Dense(128, 10),
-#     )
-# end
+        pred = prediction[1]
+        println("\nPrediction: ", pred)
+        println("Actual: ", OUTPUT)
+        total += 1
+        if pred == OUTPUT
+            correct += 1
+        elseif pred == false
+            falseneg += 1
+        else
+            falsepos += 1
+        end
 
-# # Preprocess the data (you can customize this based on your dataset)
-# # Load the MNIST dataset
-# train_X, train_y = MNIST.traindata()
-# test_X, test_y = MNIST.testdata()
+    end
 
+    accuracy = Float64(correct) / total  # Convert correct to Float64 for accurate division
+    falsepos_rate = Float64(falsepos) / total  # Convert correct to Float64 for accurate division
+    falseneg_rate = Float64(falseneg) / total  # Convert correct to Float64 for accurate division
+    # Print statements with accuracy
+    println("\n\n")
+    println("Total     $(total)\n")
 
-# train_X = train_X |> gpu
-# test_X = test_X |> gpu
+    println("Correct   $(correct)")
+    println("Accuracy  $(accuracy)\n")
 
-# # Create the CNN model
-# model = create_cnn()
-# model = model |> gpu
+    println("False Pos $(falsepos)")
+    println("rate      $(falsepos_rate)\n")
 
-# # Define loss function and optimizer
-# loss(x, y) = Flux.crossentropy(model(x), y)
-# optimizer = Flux.ADAM(params(model))
+    println("False Neg $(falseneg)")
+    println("rate      $(falseneg_rate)")
+end
 
-# # Training loop
-# function train_model(model, train_data, optimizer, loss_function, epochs)
-#     for epoch in 1:epochs
-#         @info "Epoch $epoch"
-#         println("Epoch $epoch")
-#         for (x, y) in train_data
-#             x, y = x |> gpu, y |> gpu  # Move input data to GPU if using GPU
-#             Flux.train!(loss_function, Flux.params(model), [(x, y)], optimizer)
-#         end
-#     end
-# end
-
-
-# println("start: ")
-
-# # Train the model
-# epochs = 10
-# train_model(model, train_X, optimizer, loss, epochs)
-
-# # Evaluation
-# function evaluate_model(model, test_data)
-#     accuracy = 0
-#     for (x, y) in test_data
-#         accuracy += sum(onecold(model(x)) .== onecold(y))
-#     end
-#     return accuracy / length(test_data)
-# end
-
-# test_accuracy = evaluate_model(model, test_X)
-# println("Test Accuracy: $test_accuracy")
+runtest(1000)
